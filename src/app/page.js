@@ -19,6 +19,7 @@ export default function Dashboard() {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const transcriptRef = useRef("");
+  const listeningRef = useRef(false);
 
   // Theme
   useEffect(() => {
@@ -58,10 +59,21 @@ export default function Dashboard() {
         };
 
         recognition.onerror = (event) => {
-          if (event.error !== "aborted") setIsListening(false);
+          if (event.error === "not-allowed") {
+            alert("Permesso microfono negato. Vai nelle impostazioni del browser e abilita il microfono per questo sito.");
+          }
+          if (event.error !== "aborted" && event.error !== "no-speech") {
+            listeningRef.current = false;
+            setIsListening(false);
+          }
         };
 
-        recognition.onend = () => {};
+        // AUTO-RESTART: se il browser chiude la sessione ma l'utente non ha premuto stop, riavvia
+        recognition.onend = () => {
+          if (listeningRef.current) {
+            try { recognition.start(); } catch(e) {}
+          }
+        };
 
         recognitionRef.current = recognition;
       }
@@ -108,13 +120,17 @@ export default function Dashboard() {
       return;
     }
     if (isListening) {
+      // STOP
+      listeningRef.current = false;
       recognitionRef.current.stop();
       setIsListening(false);
       const finalText = transcriptRef.current;
       if (finalText.trim()) setTimeout(() => sendToBackend(finalText), 150);
     } else {
+      // START
       transcriptRef.current = "";
       setTranscript("");
+      listeningRef.current = true;
       try { recognitionRef.current.start(); setIsListening(true); } catch (e) {}
     }
   }
