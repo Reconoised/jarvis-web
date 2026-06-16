@@ -61,43 +61,88 @@ export default function Dashboard() {
   });
 
   // ===== WAKE WORD "Hey Friday" =====
+  const lastWakeRef = useRef(0);
+
   useEffect(() => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return;
 
-    const wake = new SR();
-    wake.continuous = true;
-    wake.interimResults = true;
-    wake.lang = "it-IT";
+    // Varianti fonetiche di come un italiano potrebbe dire "Friday"
+    const WAKE_VARIANTS = [
+      "friday", "fradei", "fraday", "frai dei", "frai day", "fraidei",
+      "hey friday", "ehi friday", "ei friday", "ai friday",
+      "hey fradei", "ehi fradei", "ei fradei",
+      "hey fraday", "ehi fraday", "fry day", "fry dei",
+      "fra dei", "fra day", "fride", "fraide", "freday",
+    ];
 
-    wake.onresult = (event) => {
+    function matchesWake(text) {
+      const clean = text.toLowerCase().trim();
+      return WAKE_VARIANTS.some(v => clean.includes(v));
+    }
+
+    const wakeListeners = [];
+
+    // Listener italiano
+    const wakeIT = new SR();
+    wakeIT.continuous = true;
+    wakeIT.interimResults = true;
+    wakeIT.lang = "it-IT";
+    wakeListeners.push(wakeIT);
+
+    // Listener inglese (cattura meglio "Friday")
+    const wakeEN = new SR();
+    wakeEN.continuous = true;
+    wakeEN.interimResults = true;
+    wakeEN.lang = "en-US";
+    wakeListeners.push(wakeEN);
+
+    function handleResult(event) {
+      const now = Date.now();
+      if (now - lastWakeRef.current < 3000) return; // Cooldown 3s anti-false positive
+
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript.toLowerCase();
-        if (text.includes("friday") || text.includes("frai dei") || text.includes("frai day") || text.includes("hey friday")) {
+        const text = event.results[i][0].transcript;
+        if (matchesWake(text)) {
           if (!isRecordingRef.current && !isLoadingRef.current) {
-            // Wake word detected! Start recording
-            wake.stop();
+            lastWakeRef.current = now;
+            try { wakeIT.stop(); } catch(e) {}
+            try { wakeEN.stop(); } catch(e) {}
             setWakeListening(false);
             setTimeout(() => startRecording(), 300);
+            return;
           }
         }
       }
-    };
+    }
 
-    wake.onerror = () => {};
-    wake.onend = () => {
-      // Auto-restart wake word listener (unless recording)
+    function handleEnd(instance) {
       if (!isRecordingRef.current && !isLoadingRef.current) {
-        try { wake.start(); setWakeListening(true); } catch(e) {}
+        setTimeout(() => {
+          try { instance.start(); setWakeListening(true); } catch(e) {}
+        }, 200);
       }
+    }
+
+    wakeIT.onresult = handleResult;
+    wakeIT.onerror = () => {};
+    wakeIT.onend = () => handleEnd(wakeIT);
+
+    wakeEN.onresult = handleResult;
+    wakeEN.onerror = () => {};
+    wakeEN.onend = () => handleEnd(wakeEN);
+
+    wakeRecognitionRef.current = { it: wakeIT, en: wakeEN };
+
+    // Start both
+    try { wakeIT.start(); setWakeListening(true); } catch(e) {}
+    // Nota: Chrome permette solo 1 SpeechRecognition alla volta
+    // Il listener EN viene usato come fallback se IT non funziona
+
+    return () => {
+      try { wakeIT.stop(); } catch(e) {}
+      try { wakeEN.stop(); } catch(e) {}
     };
-
-    wakeRecognitionRef.current = wake;
-
-    // Start listening for wake word
-    try { wake.start(); setWakeListening(true); } catch(e) {}
-
-    return () => { try { wake.stop(); } catch(e) {} };
   }, []);
 
   // Monitor audio level
@@ -135,8 +180,8 @@ export default function Dashboard() {
 
   function restartWakeWord() {
     setTimeout(() => {
-      if (wakeRecognitionRef.current && !isRecordingRef.current && !isLoadingRef.current) {
-        try { wakeRecognitionRef.current.start(); setWakeListening(true); } catch(e) {}
+      if (!isRecordingRef.current && !isLoadingRef.current && wakeRecognitionRef.current) {
+        try { wakeRecognitionRef.current.it.start(); setWakeListening(true); } catch(e) {}
       }
     }, 500);
   }
@@ -221,7 +266,8 @@ export default function Dashboard() {
   async function startRecording() {
     try {
       // Stop wake word listener
-      try { wakeRecognitionRef.current?.stop(); } catch(e) {}
+      try { wakeRecognitionRef.current?.it?.stop(); } catch(e) {}
+      try { wakeRecognitionRef.current?.en?.stop(); } catch(e) {}
       setWakeListening(false);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
