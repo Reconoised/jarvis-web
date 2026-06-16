@@ -15,10 +15,11 @@ export default function Dashboard() {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [statusText, setStatusText] = useState("Dì 'Hey Friday' o tocca l'orb");
+  const [statusText, setStatusText] = useState("Premi Spazio o tocca l'orb");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [wakeListening, setWakeListening] = useState(false);
+  const [wakeEnabled, setWakeEnabled] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -60,14 +61,33 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", handleKey);
   });
 
-  // ===== WAKE WORD "Hey Friday" =====
+  // ===== WAKE WORD "Hey Friday" (opzionale) =====
   const lastWakeRef = useRef(0);
+  const wakeEnabledRef = useRef(false);
 
-  useEffect(() => {
+  function toggleWake() {
+    if (wakeEnabled) {
+      // Spegni
+      wakeEnabledRef.current = false;
+      setWakeEnabled(false);
+      setWakeListening(false);
+      try { wakeRecognitionRef.current?.stop(); } catch(e) {}
+    } else {
+      // Accendi
+      wakeEnabledRef.current = true;
+      setWakeEnabled(true);
+      startWakeListener();
+    }
+  }
+
+  function startWakeListener() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) return;
+    if (!SR) { alert("Wake word non supportato su questo browser."); return; }
 
-    // Varianti fonetiche di come un italiano potrebbe dire "Friday"
+    if (wakeRecognitionRef.current) {
+      try { wakeRecognitionRef.current.stop(); } catch(e) {}
+    }
+
     const WAKE_VARIANTS = [
       "friday", "fradei", "fraday", "frai dei", "frai day", "fraidei",
       "hey friday", "ehi friday", "ei friday", "ai friday",
@@ -76,74 +96,40 @@ export default function Dashboard() {
       "fra dei", "fra day", "fride", "fraide", "freday",
     ];
 
-    function matchesWake(text) {
-      const clean = text.toLowerCase().trim();
-      return WAKE_VARIANTS.some(v => clean.includes(v));
-    }
+    const wake = new SR();
+    wake.continuous = true;
+    wake.interimResults = true;
+    wake.lang = "it-IT";
 
-    const wakeListeners = [];
-
-    // Listener italiano
-    const wakeIT = new SR();
-    wakeIT.continuous = true;
-    wakeIT.interimResults = true;
-    wakeIT.lang = "it-IT";
-    wakeListeners.push(wakeIT);
-
-    // Listener inglese (cattura meglio "Friday")
-    const wakeEN = new SR();
-    wakeEN.continuous = true;
-    wakeEN.interimResults = true;
-    wakeEN.lang = "en-US";
-    wakeListeners.push(wakeEN);
-
-    function handleResult(event) {
+    wake.onresult = (event) => {
       const now = Date.now();
-      if (now - lastWakeRef.current < 3000) return; // Cooldown 3s anti-false positive
-
+      if (now - lastWakeRef.current < 3000) return;
       for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript;
-        if (matchesWake(text)) {
+        const text = event.results[i][0].transcript.toLowerCase().trim();
+        if (WAKE_VARIANTS.some(v => text.includes(v))) {
           if (!isRecordingRef.current && !isLoadingRef.current) {
             lastWakeRef.current = now;
-            try { wakeIT.stop(); } catch(e) {}
-            try { wakeEN.stop(); } catch(e) {}
+            try { wake.stop(); } catch(e) {}
             setWakeListening(false);
             setTimeout(() => startRecording(), 300);
             return;
           }
         }
       }
-    }
-
-    function handleEnd(instance) {
-      if (!isRecordingRef.current && !isLoadingRef.current) {
-        setTimeout(() => {
-          try { instance.start(); setWakeListening(true); } catch(e) {}
-        }, 200);
-      }
-    }
-
-    wakeIT.onresult = handleResult;
-    wakeIT.onerror = () => {};
-    wakeIT.onend = () => handleEnd(wakeIT);
-
-    wakeEN.onresult = handleResult;
-    wakeEN.onerror = () => {};
-    wakeEN.onend = () => handleEnd(wakeEN);
-
-    wakeRecognitionRef.current = { it: wakeIT, en: wakeEN };
-
-    // Start both
-    try { wakeIT.start(); setWakeListening(true); } catch(e) {}
-    // Nota: Chrome permette solo 1 SpeechRecognition alla volta
-    // Il listener EN viene usato come fallback se IT non funziona
-
-    return () => {
-      try { wakeIT.stop(); } catch(e) {}
-      try { wakeEN.stop(); } catch(e) {}
     };
-  }, []);
+
+    wake.onerror = () => {};
+    wake.onend = () => {
+      if (wakeEnabledRef.current && !isRecordingRef.current && !isLoadingRef.current) {
+        setTimeout(() => {
+          try { wake.start(); setWakeListening(true); } catch(e) {}
+        }, 500);
+      }
+    };
+
+    wakeRecognitionRef.current = wake;
+    try { wake.start(); setWakeListening(true); } catch(e) {}
+  }
 
   // Monitor audio level
   const monitorAudio = useCallback((stream) => {
@@ -179,9 +165,10 @@ export default function Dashboard() {
   }
 
   function restartWakeWord() {
+    if (!wakeEnabledRef.current) return;
     setTimeout(() => {
       if (!isRecordingRef.current && !isLoadingRef.current && wakeRecognitionRef.current) {
-        try { wakeRecognitionRef.current.it.start(); setWakeListening(true); } catch(e) {}
+        try { wakeRecognitionRef.current.start(); setWakeListening(true); } catch(e) {}
       }
     }, 500);
   }
@@ -266,8 +253,9 @@ export default function Dashboard() {
   async function startRecording() {
     try {
       // Stop wake word listener
-      try { wakeRecognitionRef.current?.it?.stop(); } catch(e) {}
-      try { wakeRecognitionRef.current?.en?.stop(); } catch(e) {}
+      if (wakeRecognitionRef.current) {
+        try { wakeRecognitionRef.current.stop(); } catch(e) {}
+      }
       setWakeListening(false);
 
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -366,7 +354,9 @@ export default function Dashboard() {
         <div className="top-bar">
           <span className="brand">FRIDAY</span>
           <div className="top-actions">
-            {wakeListening && <span className="wake-badge">WAKE ON</span>}
+            <button className={`wake-toggle ${wakeEnabled ? "on" : ""}`} onClick={toggleWake}>
+              {wakeEnabled ? (wakeListening ? "WAKE ON" : "WAKE...") : "WAKE OFF"}
+            </button>
             <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
               {theme === "dark" ? "\u2600" : "\u263D"}
             </button>
