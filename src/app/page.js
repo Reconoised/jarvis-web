@@ -29,8 +29,8 @@ export default function Dashboard() {
   const audioPlayerRef = useRef(null);
 
   // Wake word refs
-  const persistentStreamRef = useRef(null);
-  const wakeRecRef = useRef(null);
+  const wakeStreamRef = useRef(null);
+  const wakeIntervalRef = useRef(null);
   const wakeEnabledRef = useRef(false);
 
   // Sync mode ref
@@ -62,56 +62,68 @@ export default function Dashboard() {
     audioPlayerRef.current.addEventListener("error", () => setMode("idle"));
   }, []);
 
-  // ===== WAKE WORD con microfono persistente =====
+  // ===== WAKE WORD via Backend (Gemini) =====
   function toggleWake() {
-    if (wakeEnabled) {
-      stopWake();
-    } else {
-      startWake();
+    if (wakeEnabled) stopWake();
+    else startWake();
+  }
+
+  async function startWake() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      wakeStreamRef.current = stream;
+      wakeEnabledRef.current = true;
+      setWakeEnabled(true);
+      setWakeStatus("listening");
+      runWakeLoop(stream);
+    } catch(err) {
+      alert("Errore microfono: " + err.message);
     }
   }
 
-  function startWake() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Wake word non supportato su questo browser."); return; }
+  function runWakeLoop(stream) {
+    if (!wakeEnabledRef.current || !stream.active) return;
 
-    // Ferma eventuale vecchia istanza
-    try { wakeRecRef.current?.stop(); } catch(e) {}
-
-    const wake = new SR();
-    wake.continuous = true;
-    wake.interimResults = true;
-    wake.lang = "en-US";  // "Friday" è inglese
-
-    wake.onresult = (event) => {
-      if (modeRef.current !== "idle") return;
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript.toLowerCase().trim();
-        setWakeHeard(text);
-        if (text.includes("friday")) {
-          try { wake.stop(); } catch(e) {}
+    // Registra 3 secondi
+    const rec = new MediaRecorder(stream);
+    const chunks = [];
+    rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+    rec.onstop = async () => {
+      if (!wakeEnabledRef.current) return;
+      const blob = new Blob(chunks, { type: "audio/webm" });
+      if (blob.size < 500) {
+        // Silenzio, riprova
+        if (wakeEnabledRef.current && modeRef.current === "idle") runWakeLoop(stream);
+        return;
+      }
+      
+      setWakeHeard("analisi...");
+      try {
+        const fd = new FormData();
+        fd.append("audio", blob, "wake.webm");
+        const res = await fetch(`${BACKEND_URL}/api/wake-check`, { method: "POST", body: fd });
+        const data = await res.json();
+        
+        if (data.detected && wakeEnabledRef.current && modeRef.current === "idle") {
+          setWakeHeard("Friday! \u2705");
           setWakeStatus("detected");
-          setWakeHeard("");
+          // Stoppa lo stream wake e avvia registrazione vera
+          stream.getTracks().forEach(t => t.stop());
+          wakeStreamRef.current = null;
           startRec();
           return;
         }
-      }
+      } catch(e) {}
+      
+      setWakeHeard("");
+      // Continua il loop
+      if (wakeEnabledRef.current && modeRef.current === "idle") runWakeLoop(stream);
     };
 
-    wake.onerror = () => {};
-    wake.onend = () => {
-      if (wakeEnabledRef.current && modeRef.current === "idle") {
-        setTimeout(() => {
-          try { wake.start(); setWakeStatus("listening"); } catch(e) {}
-        }, 500);
-      }
-    };
-
-    wakeRecRef.current = wake;
-    wake.start();
-    wakeEnabledRef.current = true;
-    setWakeEnabled(true);
-    setWakeStatus("listening");
+    rec.start();
+    setTimeout(() => {
+      if (rec.state === "recording") rec.stop();
+    }, 3000);
   }
 
   function stopWake() {
@@ -119,16 +131,17 @@ export default function Dashboard() {
     setWakeEnabled(false);
     setWakeStatus("off");
     setWakeHeard("");
-    try { wakeRecRef.current?.stop(); } catch(e) {}
+    if (wakeStreamRef.current) {
+      wakeStreamRef.current.getTracks().forEach(t => t.stop());
+      wakeStreamRef.current = null;
+    }
   }
 
   function restartWake() {
     if (!wakeEnabledRef.current) return;
     setTimeout(() => {
-      if (modeRef.current === "idle" && wakeRecRef.current) {
-        try { wakeRecRef.current.start(); setWakeStatus("listening"); } catch(e) {}
-      }
-    }, 800);
+      if (modeRef.current === "idle") startWake();
+    }, 1000);
   }
 
   // ===== ORB CLICK =====
