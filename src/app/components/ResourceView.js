@@ -341,7 +341,7 @@ export default function ResourceView() {
                 </motion.button>
               </div>
               
-              <div className="modal-left flex flex-col h-full">
+              <div className="modal-left">
                 <div className="modal-header-info pr-20 shrink-0">
                   <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{selectedResource.title}</h3>
                   <div className="flex items-center flex-wrap gap-2 text-sm">
@@ -359,33 +359,33 @@ export default function ResourceView() {
                 </div>
 
                 {/* TABS NAVIGATION */}
-                <div className="flex items-center gap-2 mt-6 mb-4 border-b border-white/10 pb-2 shrink-0 overflow-x-auto hide-scrollbar">
+                <div className="tabs-nav">
                   <button 
                     onClick={() => setActiveTab('reader')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'reader' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                    className={`tab-btn ${activeTab === 'reader' ? 'active reader' : ''}`}
                   >
                     <FileText size={16} /> Reader
                   </button>
                   <button 
                     onClick={() => setActiveTab('connections')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'connections' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                    className={`tab-btn ${activeTab === 'connections' ? 'active connections' : ''}`}
                   >
                     <Network size={16} /> Connessioni
                   </button>
                   <button 
                     onClick={() => setActiveTab('graph')}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'graph' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                    className={`tab-btn ${activeTab === 'graph' ? 'active graph' : ''}`}
                   >
                     <BrainCircuit size={16} /> Mini Grafo
                   </button>
                 </div>
 
                 {/* TAB CONTENT */}
-                <div className="flex-1 overflow-y-auto hide-scrollbar pr-2 pb-4">
+                <div className="tab-content-area">
                   <AnimatePresence mode="wait">
                     {activeTab === 'reader' && (
-                      <motion.div key="reader" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="flex flex-col gap-6">
-                        <div className="modal-media shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden border border-white/5 aspect-video w-full shrink-0">
+                      <motion.div key="reader" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="tab-content-area">
+                        <div className="modal-media">
                           {selectedResource.type === 'video' && selectedResource.video_id ? (
                             <iframe 
                               src={`https://www.youtube.com/embed/${selectedResource.video_id}?autoplay=0&start=${videoTime}`} 
@@ -401,7 +401,7 @@ export default function ResourceView() {
                               className="w-full h-full"
                             ></iframe>
                           ) : (
-                            <div className="web-preview-box flex flex-col items-center justify-center p-10 bg-black/40 h-full w-full">
+                            <div className="web-preview-box">
                               <Globe size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
                               <p className="text-white/80 font-medium">{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
                               {selectedResource.url && (
@@ -412,17 +412,17 @@ export default function ResourceView() {
                             </div>
                           )}
                         </div>
-                        <div className="modal-summary p-6 bg-gradient-to-br from-white/5 to-transparent border border-white/5 rounded-2xl flex-1">
-                          <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <div className="modal-summary">
+                          <h4>
                             <FileText size={16} /> Appunti / Transcript
                           </h4>
-                          <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-white/70">
+                          <div className="prose">
                             {/* Mockup for Timestamps if it's a video */}
                             {selectedResource.type === 'video' && (
-                              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
-                                <PlayCircle size={18} className="text-blue-400 mt-0.5 shrink-0" />
-                                <p className="text-sm text-blue-200/80 m-0">
-                                  Clicca sui timestamp (es. <button onClick={() => setVideoTime(120)} className="text-blue-400 font-bold hover:underline">02:00</button>) per saltare a quella parte del video. I timestamp verranno generati dall'AI in futuro.
+                              <div className="timestamp-box">
+                                <PlayCircle size={18} className="text-blue-400 shrink-0" />
+                                <p style={{ margin: 0 }}>
+                                  Clicca sui timestamp (es. <button onClick={() => setVideoTime(120)} className="text-blue-400 font-bold hover:underline" style={{background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem'}}>02:00</button>) per saltare a quella parte del video. I timestamp verranno generati dall'AI in futuro.
                                 </p>
                               </div>
                             )}
@@ -433,25 +433,25 @@ export default function ResourceView() {
                     )}
 
                     {activeTab === 'connections' && (
-                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center text-center h-64">
+                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view">
                         <Network size={48} className="text-purple-500/50 mb-4" />
-                        <h4 className="text-lg font-bold text-white mb-2">Connessioni Neurali</h4>
-                        <p className="text-white/50 text-sm max-w-sm">Questa sezione mostrerà automaticamente altre risorse del tuo Vault collegate a questo argomento, in stile Recall.</p>
+                        <h4>Connessioni Neurali</h4>
+                        <p>Questa sezione mostrerà automaticamente altre risorse del tuo Vault collegate a questo argomento, in stile Recall.</p>
                       </motion.div>
                     )}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center text-center h-64">
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view">
                         <BrainCircuit size={48} className="text-emerald-500/50 mb-4" />
-                        <h4 className="text-lg font-bold text-white mb-2">Mini Grafo di Conoscenza</h4>
-                        <p className="text-white/50 text-sm max-w-sm">Qui visualizzerai una mappa concettuale interattiva dei topics estratti da questa specifica risorsa.</p>
+                        <h4>Mini Grafo Tematico</h4>
+                        <p>Qui vedrai una mappa visiva ed interattiva dei concetti estratti da questa risorsa.</p>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               </div>
 
-              <div className="modal-right flex flex-col h-full border-l border-white/5 pl-6">
+              <div className="modal-right">
                 <div className="modal-chat-header border-b border-white/10 pb-4 shrink-0">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -460,23 +460,23 @@ export default function ResourceView() {
                     </div>
                   </div>
                   {/* CONTEXT TOGGLE */}
-                  <div className="flex items-center bg-black/40 border border-white/10 rounded-xl p-1">
+                  <div className="chat-context-toggle">
                     <button 
                       onClick={() => setChatContext('resource')}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${chatContext === 'resource' ? 'bg-blue-600 text-white shadow-lg' : 'text-white/50 hover:text-white/80'}`}
+                      className={`context-btn ${chatContext === 'resource' ? 'active resource' : ''}`}
                     >
                       Solo Risorsa
                     </button>
                     <button 
                       onClick={() => setChatContext('internet')}
-                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${chatContext === 'internet' ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/50 hover:text-white/80'}`}
+                      className={`context-btn ${chatContext === 'internet' ? 'active internet' : ''}`}
                     >
                       <Globe size={12} /> Web + Risorsa
                     </button>
                   </div>
                 </div>
 
-                <div className="modal-chat-area flex-1 overflow-y-auto hide-scrollbar py-4">
+                <div className="chat-messages-scroll">
                   {chatMessages.length === 0 ? (
                     <div className="empty-chat h-full flex flex-col items-center justify-center text-center px-4">
                       <MessageSquare size={32} className="text-blue-500/30 mb-3" />
@@ -513,7 +513,7 @@ export default function ResourceView() {
                   )}
                 </div>
 
-                <div className="modal-chat-input relative mt-2 shrink-0">
+                <div className="chat-input-wrapper">
                   <input 
                     type="text" 
                     placeholder={chatContext === 'resource' ? "Chiedi dettagli sulla risorsa..." : "Cerca online e nella risorsa..."}
@@ -521,14 +521,12 @@ export default function ResourceView() {
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendChat()}
                     disabled={isChatting}
-                    className="w-full bg-[#1A1A1A] border border-white/10 rounded-full py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder-white/30 shadow-inner"
                   />
                   <button 
                     onClick={handleSendChat} 
                     disabled={isChatting || !chatInput.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-white/10 text-white rounded-full transition-all shadow-lg"
                   >
-                    <Send size={14}/>
+                    <Send size={14} />
                   </button>
                 </div>
               </div>
