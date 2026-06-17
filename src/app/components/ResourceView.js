@@ -115,7 +115,7 @@ export default function ResourceView() {
         body: JSON.stringify({ id: id })
       });
       if (res.ok) {
-        setFilteredResources(prev => prev.filter(r => r.id !== id));
+        setResources(prev => prev.filter(r => r.id !== id));
         setSelectedResource(null);
       }
     } catch (e) {
