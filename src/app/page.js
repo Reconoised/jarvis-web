@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -14,16 +14,26 @@ export default function Dashboard() {
   const [inputText, setInputText] = useState("");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [wakeEnabled, setWakeEnabled] = useState(false);
+  const [wakeStatus, setWakeStatus] = useState("off");
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const timerRef = useRef(null);
-  const streamRef = useRef(null);
   const animFrameRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const modeRef = useRef("idle");
+  const audioPlayerRef = useRef(null);
 
+  // Wake word refs
+  const persistentStreamRef = useRef(null);
+  const wakeRecRef = useRef(null);
+  const wakeEnabledRef = useRef(false);
+
+  // Sync mode ref
+  useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
@@ -31,13 +41,6 @@ export default function Dashboard() {
     fetch("/api/tasks").then(r => r.json()).then(d => { if (d.tasks) setTasks(d.tasks); }).catch(() => {});
     fetch("/api/projects").then(r => r.json()).then(d => { if (d.projects) setProjects(d.projects); }).catch(() => {});
     fetch("/api/recent").then(r => r.json()).then(d => { if (d.files) setRecentFiles(d.files); }).catch(() => {});
-  }, []);
-
-  useEffect(() => {
-    if ("speechSynthesis" in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
-    }
   }, []);
 
   // Shortcut
@@ -51,7 +54,101 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", h);
   });
 
-  // ===== ORB CLICK: gestisce tutti gli stati =====
+  // Audio player per TTS
+  useEffect(() => {
+    audioPlayerRef.current = new Audio();
+    audioPlayerRef.current.addEventListener("ended", () => setMode("idle"));
+    audioPlayerRef.current.addEventListener("error", () => setMode("idle"));
+  }, []);
+
+  // ===== WAKE WORD con microfono persistente =====
+  function toggleWake() {
+    if (wakeEnabled) {
+      stopWake();
+    } else {
+      startWake();
+    }
+  }
+
+  async function startWake() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert("Wake word non supportato su questo browser."); return; }
+
+    try {
+      // Apro uno stream persistente — l'icona del microfono resta fissa, non lampeggia
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      persistentStreamRef.current = stream;
+
+      const WAKE_WORDS = [
+        "friday", "fradei", "fraday", "frai dei", "frai day", "fraidei",
+        "hey friday", "ehi friday", "fry day", "fry dei", "fra dei",
+        "fra day", "fride", "fraide", "freday", "free day",
+      ];
+
+      const wake = new SR();
+      wake.continuous = true;
+      wake.interimResults = true;
+      wake.lang = "it-IT";
+
+      wake.onresult = (event) => {
+        if (modeRef.current !== "idle") return;
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const text = event.results[i][0].transcript.toLowerCase().trim();
+          if (WAKE_WORDS.some(w => text.includes(w))) {
+            // Detected!
+            try { wake.stop(); } catch(e) {}
+            setWakeStatus("detected");
+            startRec();
+            return;
+          }
+        }
+      };
+
+      wake.onerror = (e) => {
+        // "no-speech" è normale, si riavvia da solo
+        if (e.error === "aborted") return;
+      };
+
+      wake.onend = () => {
+        // Riavvia se wake è ancora abilitato e siamo idle
+        if (wakeEnabledRef.current && modeRef.current === "idle") {
+          setTimeout(() => {
+            try { wake.start(); setWakeStatus("listening"); } catch(e) {}
+          }, 300);
+        }
+      };
+
+      wakeRecRef.current = wake;
+      wake.start();
+      wakeEnabledRef.current = true;
+      setWakeEnabled(true);
+      setWakeStatus("listening");
+    } catch(err) {
+      alert("Errore microfono: " + err.message);
+    }
+  }
+
+  function stopWake() {
+    wakeEnabledRef.current = false;
+    setWakeEnabled(false);
+    setWakeStatus("off");
+    try { wakeRecRef.current?.stop(); } catch(e) {}
+    if (persistentStreamRef.current) {
+      persistentStreamRef.current.getTracks().forEach(t => t.stop());
+      persistentStreamRef.current = null;
+    }
+  }
+
+  function restartWake() {
+    if (!wakeEnabledRef.current) return;
+    setTimeout(() => {
+      if (modeRef.current === "idle" && wakeRecRef.current) {
+        try { wakeRecRef.current.start(); setWakeStatus("listening"); } catch(e) {}
+      }
+    }, 800);
+  }
+
+  // ===== ORB CLICK =====
   function handleOrbClick() {
     if (mode === "recording") {
       stopRec();
@@ -60,16 +157,17 @@ export default function Dashboard() {
     } else if (mode === "idle") {
       startRec();
     }
-    // se "thinking", ignora
   }
 
   // ===== REGISTRAZIONE =====
   async function startRec() {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      // Pausa wake word
+      try { wakeRecRef.current?.stop(); } catch(e) {}
 
-      // Audio level monitor
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+      // Audio visualizer
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
@@ -92,18 +190,13 @@ export default function Dashboard() {
       audioChunksRef.current = [];
       rec.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
       rec.onstop = () => {
-        // Cleanup
         cancelAnimationFrame(animFrameRef.current);
         ctx.close().catch(() => {});
         stream.getTracks().forEach(t => t.stop());
         setAudioLevel(0);
-        
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (blob.size > 1000) {
-          sendAudio(blob);
-        } else {
-          setMode("idle");
-        }
+        if (blob.size > 1000) sendAudio(blob);
+        else { setMode("idle"); restartWake(); }
       };
 
       rec.start();
@@ -113,7 +206,9 @@ export default function Dashboard() {
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch (err) {
       console.error("Mic error:", err);
-      alert("Errore microfono: " + err.message + "\n\nVerifica che il browser abbia il permesso di usare il microfono.");
+      alert("Errore microfono: " + err.message);
+      setMode("idle");
+      restartWake();
     }
   }
 
@@ -136,14 +231,14 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.response) {
         setMessages(prev => [...prev, { role: "assistant", text: data.response }]);
-        speak(data.response);
+        speakNeural(data.response);
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
-        setMode("idle");
+        setMode("idle"); restartWake();
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message }]);
-      setMode("idle");
+      setMode("idle"); restartWake();
     }
   }
 
@@ -161,40 +256,58 @@ export default function Dashboard() {
       const data = await res.json();
       if (data.response) {
         setMessages(prev => [...prev, { role: "assistant", text: data.response }]);
-        speak(data.response);
+        speakNeural(data.response);
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
-        setMode("idle");
+        setMode("idle"); restartWake();
       }
     } catch (err) {
       setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message }]);
-      setMode("idle");
+      setMode("idle"); restartWake();
     }
   }
 
-  // ===== TTS =====
-  function speak(text) {
-    if (!("speechSynthesis" in window)) { setMode("idle"); return; }
-    window.speechSynthesis.cancel();
+  // ===== TTS NEURALE (Edge TTS dal backend) =====
+  async function speakNeural(text) {
+    setMode("speaking");
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+      if (!res.ok) throw new Error("TTS fallito");
+      const audioBlob = await res.blob();
+      const url = URL.createObjectURL(audioBlob);
+      const player = audioPlayerRef.current;
+      player.src = url;
+      player.onended = () => { setMode("idle"); URL.revokeObjectURL(url); restartWake(); };
+      player.onerror = () => { setMode("idle"); URL.revokeObjectURL(url); restartWake(); };
+      player.play();
+    } catch (err) {
+      console.error("TTS error:", err);
+      // Fallback: browser TTS
+      fallbackSpeak(text);
+    }
+  }
+
+  function fallbackSpeak(text) {
+    if (!("speechSynthesis" in window)) { setMode("idle"); restartWake(); return; }
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = "it-IT";
-    u.rate = 1.0;
-    u.pitch = 0.95;
+    u.lang = "it-IT"; u.rate = 1.0;
     const voices = window.speechSynthesis.getVoices();
-    const v = voices.find(v => v.lang === "it-IT" && v.name.includes("Google"))
-      || voices.find(v => v.lang === "it-IT" && v.name.includes("Luca"))
-      || voices.find(v => v.lang === "it-IT" && !v.localService)
-      || voices.find(v => v.lang.startsWith("it"));
+    const v = voices.find(v => v.lang.startsWith("it"));
     if (v) u.voice = v;
-    u.onstart = () => setMode("speaking");
-    u.onend = () => setMode("idle");
-    u.onerror = () => setMode("idle");
+    u.onend = () => { setMode("idle"); restartWake(); };
+    u.onerror = () => { setMode("idle"); restartWake(); };
     window.speechSynthesis.speak(u);
   }
 
   function stopSpeaking() {
+    if (audioPlayerRef.current) { audioPlayerRef.current.pause(); audioPlayerRef.current.currentTime = 0; }
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setMode("idle");
+    restartWake();
   }
 
   function handleSendText() {
@@ -215,7 +328,7 @@ export default function Dashboard() {
   const glow = mode === "recording" ? 30 + audioLevel * 80 : 0;
 
   const STATUS = {
-    idle: "Premi Spazio o tocca l'orb",
+    idle: wakeEnabled ? "In ascolto per 'Hey Friday'..." : "Premi Spazio o tocca l'orb",
     recording: `Sto ascoltando... \u2022 ${ft(recordingTime)}`,
     thinking: "Sto pensando...",
     speaking: "Friday sta parlando...",
@@ -249,9 +362,14 @@ export default function Dashboard() {
       <div className="center">
         <div className="top-bar">
           <span className="brand">FRIDAY</span>
-          <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
-            {theme === "dark" ? "\u2600" : "\u263D"}
-          </button>
+          <div className="top-actions">
+            <button className={`wake-toggle ${wakeEnabled ? "on" : ""}`} onClick={toggleWake} title="Hey Friday wake word">
+              {wakeEnabled ? "\uD83C\uDF99 WAKE" : "\uD83C\uDF99 OFF"}
+            </button>
+            <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
+              {theme === "dark" ? "\u2600" : "\u263D"}
+            </button>
+          </div>
         </div>
 
         <div className={`orb-wrapper ${mode !== "idle" ? "active" : ""}`}>
@@ -269,6 +387,7 @@ export default function Dashboard() {
 
         <p className="status">
           {mode === "recording" && <span className="rec-dot" />}
+          {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
           {STATUS[mode]}
         </p>
 
@@ -276,6 +395,7 @@ export default function Dashboard() {
           {messages.length === 0 && (
             <div className="empty-chat">
               <p>{"Premi Spazio o tocca l'orb per parlare a Friday."}</p>
+              <p className="hint">Attiva WAKE per il comando vocale 'Hey Friday'</p>
               <p className="hint">Spazio = mic \u2022 Esc = interrompi</p>
             </div>
           )}
