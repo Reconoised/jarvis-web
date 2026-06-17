@@ -3,7 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
-const WAKE_PHRASE = "friday";
+const SILENCE_TIMEOUT_MS = 2000;
+const SILENCE_THRESHOLD = 0.04;
 
 export default function Dashboard() {
   const [theme, setTheme] = useState("dark");
@@ -18,8 +19,6 @@ export default function Dashboard() {
   const [statusText, setStatusText] = useState("Premi Spazio o tocca l'orb");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [wakeListening, setWakeListening] = useState(false);
-  const [wakeEnabled, setWakeEnabled] = useState(false);
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -28,9 +27,10 @@ export default function Dashboard() {
   const timerRef = useRef(null);
   const analyserRef = useRef(null);
   const animFrameRef = useRef(null);
-  const wakeRecognitionRef = useRef(null);
   const isRecordingRef = useRef(false);
   const isLoadingRef = useRef(false);
+  const silenceTimerRef = useRef(null);
+  const hasSpokenRef = useRef(false);
 
   useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -61,91 +61,45 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", handleKey);
   });
 
-  // ===== WAKE WORD "Hey Friday" (opzionale) =====
-  const lastWakeRef = useRef(0);
-  const wakeEnabledRef = useRef(false);
-
-  function toggleWake() {
-    if (wakeEnabled) {
-      // Spegni
-      wakeEnabledRef.current = false;
-      setWakeEnabled(false);
-      setWakeListening(false);
-      try { wakeRecognitionRef.current?.stop(); } catch(e) {}
-    } else {
-      // Accendi
-      wakeEnabledRef.current = true;
-      setWakeEnabled(true);
-      startWakeListener();
-    }
-  }
-
-  function startWakeListener() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SR) { alert("Wake word non supportato su questo browser."); return; }
-
-    if (wakeRecognitionRef.current) {
-      try { wakeRecognitionRef.current.stop(); } catch(e) {}
-    }
-
-    const WAKE_VARIANTS = [
-      "friday", "fradei", "fraday", "frai dei", "frai day", "fraidei",
-      "hey friday", "ehi friday", "ei friday", "ai friday",
-      "hey fradei", "ehi fradei", "ei fradei",
-      "hey fraday", "ehi fraday", "fry day", "fry dei",
-      "fra dei", "fra day", "fride", "fraide", "freday",
-    ];
-
-    const wake = new SR();
-    wake.continuous = true;
-    wake.interimResults = true;
-    wake.lang = "it-IT";
-
-    wake.onresult = (event) => {
-      const now = Date.now();
-      if (now - lastWakeRef.current < 3000) return;
-      for (let i = event.resultIndex; i < event.results.length; i++) {
-        const text = event.results[i][0].transcript.toLowerCase().trim();
-        if (WAKE_VARIANTS.some(v => text.includes(v))) {
-          if (!isRecordingRef.current && !isLoadingRef.current) {
-            lastWakeRef.current = now;
-            try { wake.stop(); } catch(e) {}
-            setWakeListening(false);
-            setTimeout(() => startRecording(), 300);
-            return;
-          }
-        }
-      }
-    };
-
-    wake.onerror = () => {};
-    wake.onend = () => {
-      if (wakeEnabledRef.current && !isRecordingRef.current && !isLoadingRef.current) {
-        setTimeout(() => {
-          try { wake.start(); setWakeListening(true); } catch(e) {}
-        }, 500);
-      }
-    };
-
-    wakeRecognitionRef.current = wake;
-    try { wake.start(); setWakeListening(true); } catch(e) {}
-  }
-
-  // Monitor audio level
-  const monitorAudio = useCallback((stream) => {
+  // ===== MONITOR AUDIO + AUTO-STOP =====
+  const startAudioMonitor = useCallback((stream) => {
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const source = audioCtx.createMediaStreamSource(stream);
     const analyser = audioCtx.createAnalyser();
-    analyser.fftSize = 256;
-    analyser.smoothingTimeConstant = 0.7;
+    analyser.fftSize = 512;
+    analyser.smoothingTimeConstant = 0.85;
     source.connect(analyser);
     analyserRef.current = { analyser, audioCtx };
 
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const dataArray = new Float32Array(analyser.frequencyBinCount);
+
     function tick() {
-      analyser.getByteFrequencyData(dataArray);
-      const avg = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
-      setAudioLevel(Math.min(avg / 128, 1));
+      if (!isRecordingRef.current) return;
+      analyser.getFloatTimeDomainData(dataArray);
+      
+      // Calcola RMS (root mean square) per il livello audio
+      let sum = 0;
+      for (let i = 0; i < dataArray.length; i++) sum += dataArray[i] * dataArray[i];
+      const rms = Math.sqrt(sum / dataArray.length);
+      setAudioLevel(Math.min(rms * 5, 1));
+
+      // Auto-stop: se c'è silenzio per SILENCE_TIMEOUT_MS dopo aver parlato
+      if (rms > SILENCE_THRESHOLD) {
+        // L'utente sta parlando
+        hasSpokenRef.current = true;
+        if (silenceTimerRef.current) {
+          clearTimeout(silenceTimerRef.current);
+          silenceTimerRef.current = null;
+        }
+      } else if (hasSpokenRef.current && !silenceTimerRef.current) {
+        // Silenzio dopo aver parlato — avvia countdown
+        silenceTimerRef.current = setTimeout(() => {
+          if (isRecordingRef.current) {
+            stopRecording();
+          }
+        }, SILENCE_TIMEOUT_MS);
+      }
+
       animFrameRef.current = requestAnimationFrame(tick);
     }
     tick();
@@ -154,25 +108,17 @@ export default function Dashboard() {
   function stopAudioMonitor() {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
     if (analyserRef.current?.audioCtx) analyserRef.current.audioCtx.close().catch(() => {});
+    if (silenceTimerRef.current) { clearTimeout(silenceTimerRef.current); silenceTimerRef.current = null; }
     setAudioLevel(0);
   }
 
   function stopSpeaking() {
     if ("speechSynthesis" in window) window.speechSynthesis.cancel();
     setIsSpeaking(false);
-    setStatusText("Dì 'Hey Friday' o tocca l'orb");
-    restartWakeWord();
+    setStatusText("Premi Spazio o tocca l'orb");
   }
 
-  function restartWakeWord() {
-    if (!wakeEnabledRef.current) return;
-    setTimeout(() => {
-      if (!isRecordingRef.current && !isLoadingRef.current && wakeRecognitionRef.current) {
-        try { wakeRecognitionRef.current.start(); setWakeListening(true); } catch(e) {}
-      }
-    }, 500);
-  }
-
+  // ===== INVIO TESTO =====
   async function sendText(text) {
     if (!text.trim() || isLoading) return;
     setMessages(prev => [...prev, { role: "user", text }]);
@@ -193,11 +139,11 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
-      setStatusText("Dì 'Hey Friday' o tocca l'orb");
-      restartWakeWord();
+      setStatusText("Premi Spazio o tocca l'orb");
     }
   }
 
+  // ===== INVIO AUDIO =====
   async function sendAudio(audioBlob) {
     setIsLoading(true);
     isLoadingRef.current = true;
@@ -215,8 +161,7 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
       isLoadingRef.current = false;
-      setStatusText("Dì 'Hey Friday' o tocca l'orb");
-      restartWakeWord();
+      setStatusText("Premi Spazio o tocca l'orb");
     }
   }
 
@@ -245,24 +190,20 @@ export default function Dashboard() {
     if (preferred) utterance.voice = preferred;
 
     utterance.onstart = () => { setIsSpeaking(true); setStatusText("Friday sta parlando..."); };
-    utterance.onend = () => { setIsSpeaking(false); setStatusText("Dì 'Hey Friday' o tocca l'orb"); restartWakeWord(); };
-    utterance.onerror = () => { setIsSpeaking(false); restartWakeWord(); };
+    utterance.onend = () => { setIsSpeaking(false); setStatusText("Premi Spazio o tocca l'orb"); };
+    utterance.onerror = () => { setIsSpeaking(false); };
     window.speechSynthesis.speak(utterance);
   }
 
+  // ===== REGISTRAZIONE =====
   async function startRecording() {
     try {
-      // Stop wake word listener
-      if (wakeRecognitionRef.current) {
-        try { wakeRecognitionRef.current.stop(); } catch(e) {}
-      }
-      setWakeListening(false);
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      monitorAudio(stream);
+      startAudioMonitor(stream);
 
       const mediaRecorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
       audioChunksRef.current = [];
+      hasSpokenRef.current = false;
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) audioChunksRef.current.push(e.data);
@@ -272,19 +213,19 @@ export default function Dashboard() {
         stream.getTracks().forEach(t => t.stop());
         stopAudioMonitor();
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (blob.size > 0) sendAudio(blob);
+        if (blob.size > 0 && hasSpokenRef.current) sendAudio(blob);
+        else setStatusText("Premi Spazio o tocca l'orb");
       };
 
       mediaRecorder.start();
       mediaRecorderRef.current = mediaRecorder;
       setIsRecording(true);
       isRecordingRef.current = true;
-      setStatusText("Sto ascoltando...");
+      setStatusText("Sto ascoltando... parla, mi fermo da solo");
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch (err) {
       alert("Permesso microfono negato. Abilita il microfono nelle impostazioni del browser.");
-      restartWakeWord();
     }
   }
 
@@ -294,7 +235,6 @@ export default function Dashboard() {
     isRecordingRef.current = false;
     clearInterval(timerRef.current);
     setRecordingTime(0);
-    stopAudioMonitor();
   }
 
   function toggleRecording() {
@@ -322,8 +262,8 @@ export default function Dashboard() {
   }
 
   const orbClass = isRecording ? "recording" : isLoading ? "thinking" : isSpeaking ? "speaking" : "";
-  const dynamicScale = isRecording ? 1 + audioLevel * 0.25 : 1;
-  const dynamicGlow = isRecording ? 40 + audioLevel * 60 : 0;
+  const dynamicScale = isRecording ? 1 + audioLevel * 0.3 : 1;
+  const dynamicGlow = isRecording ? 30 + audioLevel * 80 : 0;
 
   return (
     <main className="dashboard">
@@ -354,9 +294,6 @@ export default function Dashboard() {
         <div className="top-bar">
           <span className="brand">FRIDAY</span>
           <div className="top-actions">
-            <button className={`wake-toggle ${wakeEnabled ? "on" : ""}`} onClick={toggleWake}>
-              {wakeEnabled ? (wakeListening ? "WAKE ON" : "WAKE...") : "WAKE OFF"}
-            </button>
             <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
               {theme === "dark" ? "\u2600" : "\u263D"}
             </button>
@@ -371,20 +308,21 @@ export default function Dashboard() {
             onClick={toggleRecording}
             style={isRecording ? {
               transform: `scale(${dynamicScale})`,
-              boxShadow: `0 0 ${dynamicGlow}px rgba(120,90,255,${0.3 + audioLevel * 0.4})`
+              boxShadow: `0 0 ${dynamicGlow}px rgba(120,90,255,${0.3 + audioLevel * 0.5})`
             } : {}}
           />
         </div>
 
         <p className="status">
           {isRecording && <span className="rec-dot" />}
-          {isRecording ? `${statusText} \u2022 ${formatTime(recordingTime)}` : statusText}
+          {isRecording ? `Sto ascoltando... \u2022 ${formatTime(recordingTime)}` : statusText}
         </p>
 
         <div className="chat">
           {messages.length === 0 && (
             <div className="empty-chat">
-              <p>{"Dì \"Hey Friday\" o tocca l'orb per iniziare."}</p>
+              <p>{"Premi Spazio o tocca l'orb per parlare."}</p>
+              <p className="hint">Friday si ferma automaticamente quando smetti di parlare.</p>
               <p className="hint">Spazio = mic \u2022 Esc = interrompi</p>
             </div>
           )}
