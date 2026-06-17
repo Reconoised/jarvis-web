@@ -379,6 +379,15 @@ export default function ResourceView({ isMobile }) {
                   >
                     <BrainCircuit size={16} /> Mini Grafo
                   </button>
+                  {selectedResource.type === 'video' && (
+                    <button 
+                      onClick={() => setActiveTab('raw')}
+                      className={`tab-btn ${activeTab === 'raw' ? 'active connections' : ''}`}
+                      style={activeTab === 'raw' ? {color: '#f43f5e', borderColor: 'rgba(244,63,94,0.2)', background: 'rgba(244,63,94,0.1)'} : {}}
+                    >
+                      <FileText size={16} /> Raw Transcript
+                    </button>
+                  )}
                 </div>
 
                 {/* TAB CONTENT */}
@@ -440,7 +449,7 @@ export default function ResourceView({ isMobile }) {
                               <div 
                                 className="prose markdown-body" 
                                 dangerouslySetInnerHTML={{ 
-                                  __html: selectedResource.content
+                                  __html: (selectedResource.content.split('=== RAW_TRANSCRIPT ===')[0])
                                     .replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {
                                       const totalSeconds = parseInt(m) * 60 + parseInt(s);
                                       return `<button class="timestamp-btn" data-time="${totalSeconds}">${match}</button>`;
@@ -508,6 +517,31 @@ export default function ResourceView({ isMobile }) {
                              <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic'}}>Nessun topic estratto.</p>
                           )}
                         </div>
+                      </motion.div>
+                    )}
+
+                    {activeTab === 'raw' && (
+                      <motion.div key="raw" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent'}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
+                          <FileText size={32} className="text-rose-500" />
+                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Trascrizione Integrale</h4>
+                        </div>
+                        <div className="prose markdown-body" style={{fontSize: '0.9rem', lineHeight: 1.8}}
+                          dangerouslySetInnerHTML={{ 
+                            __html: selectedResource.content && selectedResource.content.includes('=== RAW_TRANSCRIPT ===')
+                              ? selectedResource.content.split('=== RAW_TRANSCRIPT ===')[1].replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {
+                                  const totalSeconds = parseInt(m) * 60 + parseInt(s);
+                                  return `<button class="timestamp-btn" data-time="${totalSeconds}">${match}</button>`;
+                                }).replace(/\n/g, '<br/>')
+                              : "<p style='color: rgba(255,255,255,0.5); font-style: italic;'>Nessuna trascrizione integrale salvata per questo video. Ricrealo o aggiornalo.</p>"
+                          }} 
+                          onClick={(e) => {
+                            if (e.target.classList.contains('timestamp-btn')) {
+                              const time = parseInt(e.target.getAttribute('data-time'));
+                              setVideoTime(time);
+                            }
+                          }}
+                        />
                       </motion.div>
                     )}
                   </AnimatePresence>
