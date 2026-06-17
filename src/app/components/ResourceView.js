@@ -422,29 +422,77 @@ export default function ResourceView() {
                               <div className="timestamp-box">
                                 <PlayCircle size={18} className="text-blue-400 shrink-0" />
                                 <p style={{ margin: 0 }}>
-                                  Clicca sui timestamp (es. <button onClick={() => setVideoTime(120)} className="text-blue-400 font-bold hover:underline" style={{background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem'}}>02:00</button>) per saltare a quella parte del video. I timestamp verranno generati dall'AI in futuro.
+                                  Clicca sui timestamp (es. <button onClick={() => setVideoTime(0)} className="timestamp-btn">00:00</button>) generati dall'IA qui sotto per saltare direttamente a quella parte del video.
                                 </p>
                               </div>
                             )}
-                            <p>{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
+                            
+                            {selectedResource.content ? (
+                              <div 
+                                className="prose markdown-body" 
+                                dangerouslySetInnerHTML={{ 
+                                  __html: selectedResource.content
+                                    .replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {
+                                      const totalSeconds = parseInt(m) * 60 + parseInt(s);
+                                      return `<button class="timestamp-btn" data-time="${totalSeconds}">${match}</button>`;
+                                    })
+                                    .replace(/\n/g, '<br/>')
+                                    .replace(/## (.*?)(<br\/>|$)/g, '<h3>$1</h3>')
+                                    .replace(/# (.*?)(<br\/>|$)/g, '<h2>$1</h2>')
+                                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                                }} 
+                                onClick={(e) => {
+                                  if (e.target.classList.contains('timestamp-btn')) {
+                                    const time = parseInt(e.target.getAttribute('data-time'));
+                                    setVideoTime(time);
+                                  }
+                                }}
+                              />
+                            ) : (
+                              <p>{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
+                            )}
                           </div>
                         </div>
                       </motion.div>
                     )}
 
                     {activeTab === 'connections' && (
-                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view">
-                        <Network size={48} className="text-purple-500/50 mb-4" />
-                        <h4>Connessioni Neurali</h4>
-                        <p>Questa sezione mostrerà automaticamente altre risorse del tuo Vault collegate a questo argomento, in stile Recall.</p>
+                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent'}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
+                          <Network size={32} className="text-purple-500" />
+                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Connessioni Neurali</h4>
+                        </div>
+                        <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '24px', maxWidth: '100%', marginLeft: 0}}>Risorse collegate a "{selectedResource.title}"</p>
+                        
+                        <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
+                          {resources.filter(r => r.id !== selectedResource.id && (r.tags?.some(t => selectedResource.tags?.includes(t)) || r.topics?.some(t => selectedResource.topics?.includes(t)))).slice(0, 5).map(r => (
+                            <div key={r.id} style={{padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'}} onClick={() => setSelectedResource(r)}>
+                              <h5 style={{color: '#60a5fa', margin: '0 0 8px 0', fontSize: '0.95rem'}}>{r.title}</h5>
+                              <p style={{color: 'rgba(255,255,255,0.5)', margin: 0, fontSize: '0.85rem'}}>{r.summary}</p>
+                            </div>
+                          ))}
+                          {resources.filter(r => r.id !== selectedResource.id && (r.tags?.some(t => selectedResource.tags?.includes(t)) || r.topics?.some(t => selectedResource.topics?.includes(t)))).length === 0 && (
+                            <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', margin: 0}}>Nessuna connessione trovata.</p>
+                          )}
+                        </div>
                       </motion.div>
                     )}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view">
-                        <BrainCircuit size={48} className="text-emerald-500/50 mb-4" />
-                        <h4>Mini Grafo Tematico</h4>
-                        <p>Qui vedrai una mappa visiva ed interattiva dei concetti estratti da questa risorsa.</p>
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'center', height: '100%', border: 'none', background: 'transparent'}}>
+                        <Share2 size={48} className="text-green-500/50 mb-4" />
+                        <h4 style={{color: '#fff', fontSize: '1.2rem'}}>Topologia (Mini Grafo)</h4>
+                        <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '24px', maxWidth: '100%'}}>I concetti chiave estratti da questa risorsa</p>
+                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '24px'}}>
+                          {(selectedResource.topics || selectedResource.tags || []).map((t, idx) => (
+                            <div key={idx} style={{padding: '8px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', color: '#4ade80', fontSize: '0.85rem', whiteSpace: 'nowrap'}}>
+                              #{t}
+                            </div>
+                          ))}
+                          {!(selectedResource.topics || selectedResource.tags || []).length && (
+                             <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic'}}>Nessun topic estratto.</p>
+                          )}
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -459,21 +507,6 @@ export default function ResourceView() {
                       <h4 className="font-semibold tracking-wide text-white">Focus Chat</h4>
                     </div>
                   </div>
-                  {/* CONTEXT TOGGLE */}
-                  <div className="chat-context-toggle">
-                    <button 
-                      onClick={() => setChatContext('resource')}
-                      className={`context-btn ${chatContext === 'resource' ? 'active resource' : ''}`}
-                    >
-                      Solo Risorsa
-                    </button>
-                    <button 
-                      onClick={() => setChatContext('internet')}
-                      className={`context-btn ${chatContext === 'internet' ? 'active internet' : ''}`}
-                    >
-                      <Globe size={12} /> Web + Risorsa
-                    </button>
-                  </div>
                 </div>
 
                 <div className="chat-messages-scroll">
@@ -481,7 +514,7 @@ export default function ResourceView() {
                     <div className="empty-chat h-full flex flex-col items-center justify-center text-center px-4">
                       <MessageSquare size={32} className="text-blue-500/30 mb-3" />
                       <p className="text-white/40 text-sm">Fai una domanda a Friday riguardo a questa specifica risorsa.</p>
-                      <p className="text-blue-400/60 text-xs mt-2">Contesto attuale: {chatContext === 'resource' ? 'Solo questo documento' : 'Questo documento + Ricerca Web'}</p>
+                      <p className="text-blue-400/60 text-xs mt-2">Contesto: {chatContext === 'resource' ? 'Solo questo documento' : 'Documento + Ricerca Web'}</p>
                     </div>
                   ) : (
                     chatMessages.map((msg, i) => (
@@ -513,21 +546,37 @@ export default function ResourceView() {
                   )}
                 </div>
 
-                <div className="chat-input-wrapper">
-                  <input 
-                    type="text" 
-                    placeholder={chatContext === 'resource' ? "Chiedi dettagli sulla risorsa..." : "Cerca online e nella risorsa..."}
-                    value={chatInput}
-                    onChange={e => setChatInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSendChat()}
-                    disabled={isChatting}
-                  />
-                  <button 
-                    onClick={handleSendChat} 
-                    disabled={isChatting || !chatInput.trim()}
-                  >
-                    <Send size={14} />
-                  </button>
+                <div className="chat-controls-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  <div className="chat-context-toggle" style={{ alignSelf: 'flex-start', width: 'fit-content' }}>
+                    <button 
+                      onClick={() => setChatContext('resource')}
+                      className={`context-btn ${chatContext === 'resource' ? 'active resource' : ''}`}
+                    >
+                      Solo Risorsa
+                    </button>
+                    <button 
+                      onClick={() => setChatContext('internet')}
+                      className={`context-btn ${chatContext === 'internet' ? 'active internet' : ''}`}
+                    >
+                      <Globe size={12} /> Web + Risorsa
+                    </button>
+                  </div>
+                  <div className="chat-input-wrapper">
+                    <input 
+                      type="text" 
+                      placeholder={chatContext === 'resource' ? "Chiedi dettagli sulla risorsa..." : "Cerca online e nella risorsa..."}
+                      value={chatInput}
+                      onChange={e => setChatInput(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSendChat()}
+                      disabled={isChatting}
+                    />
+                    <button 
+                      onClick={handleSendChat} 
+                      disabled={isChatting || !chatInput.trim()}
+                    >
+                      <Send size={14} />
+                    </button>
+                  </div>
                 </div>
               </div>
             </motion.div>
