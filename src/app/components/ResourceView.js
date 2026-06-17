@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2 } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -226,20 +226,35 @@ export default function ResourceView() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              <button className="close-modal-btn" onClick={handleCloseModal}>
-                <X size={20} />
-              </button>
+              {/* Modal Header */}
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <h3 className="text-2xl font-bold text-white mb-2">{selectedResource.title}</h3>
+                  <div className="flex items-center space-x-3 text-sm text-white/50">
+                    <span className="flex items-center space-x-1">
+                      <Tag size={14} />
+                      <span>{selectedResource.tags?.join(", ") || "Nessun tag"}</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => handleDelete(selectedResource.id)}
+                    className="p-2 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-xl transition-all"
+                    title="Elimina Risorsa"
+                  >
+                    <Trash2 size={24} />
+                  </button>
+                  <button 
+                    onClick={() => setSelectedResource(null)}
+                    className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                  >
+                    <X size={24} />
+                  </button>
+                </div>
+              </div>
               
               <div className="modal-left">
-                <div className="modal-header-info">
-                  <h3>{selectedResource.title}</h3>
-                  {selectedResource.tags && (
-                    <div className="modal-tags">
-                      {selectedResource.tags.map(t => <span key={t} className="card-tag">{t}</span>)}
-                    </div>
-                  )}
-                </div>
-                
                 <div className="modal-media">
                   {selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
                     <iframe 
