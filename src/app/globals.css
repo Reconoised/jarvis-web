@@ -35,7 +35,7 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: env(safe-area-inset-top, 20px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
+  padding: max(env(safe-area-inset-top), 40px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
   max-width: 1400px;
   margin: 0 auto;
   width: 100%;
@@ -103,9 +103,9 @@ html, body {
   .inbox-widget { grid-column: span 6; grid-row: span 6; }
 }
 @media (min-width: 1024px) {
-  .orb-widget { grid-column: span 6; grid-row: span 12; }
-  .focus-widget { grid-column: span 3; grid-row: span 12; }
-  .inbox-widget { grid-column: span 3; grid-row: span 12; }
+  .orb-widget { grid-column: span 4; grid-row: span 12; }
+  .focus-widget { grid-column: span 4; grid-row: span 12; }
+  .inbox-widget { grid-column: span 4; grid-row: span 12; }
 }
 
 /* Tasks */
