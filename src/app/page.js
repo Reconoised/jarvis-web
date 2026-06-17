@@ -155,10 +155,37 @@ export default function Dashboard() {
       audioCtxRef.current = ctx;
 
       const buf = new Uint8Array(analyser.frequencyBinCount);
+      let silenceStart = 0;
+      let hasSpoken = false;
+      const MAX_RECORDING_MS = 60000; // max 60s
+      const SILENCE_THRESHOLD_MS = 3000; // 3 secondi di silenzio chiudono
+      const recStart = Date.now();
+
       function tick() {
         analyser.getByteFrequencyData(buf);
         const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
         setAudioLevel(Math.min(avg / 100, 1));
+        
+        // Logica Auto-Stop
+        const now = Date.now();
+        if (avg > 10) {
+            hasSpoken = true;
+            silenceStart = 0;
+        } else if (hasSpoken) {
+            if (silenceStart === 0) silenceStart = now;
+            else if (now - silenceStart > SILENCE_THRESHOLD_MS) {
+                // Ha finito di parlare
+                stopRec();
+                return;
+            }
+        }
+        
+        // Timeout di sicurezza
+        if (now - recStart > MAX_RECORDING_MS || (now - recStart > 8000 && !hasSpoken)) {
+            stopRec();
+            return;
+        }
+
         animFrameRef.current = requestAnimationFrame(tick);
       }
       tick();
