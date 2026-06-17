@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import MeditationView from "./components/MeditationView";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
 export default function Dashboard() {
@@ -505,6 +506,8 @@ export default function Dashboard() {
           </div>
         </motion.div>
           </div>
+        ) : currentView === "Meditazione" ? (
+          <MeditationView />
         ) : (
           <div className="placeholder-view">
              <h1>🚧 Lavori in corso</h1>
