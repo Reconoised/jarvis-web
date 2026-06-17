@@ -38,6 +38,21 @@ export default function Dashboard() {
   useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+  // Recupera la chat history salvata
+  useEffect(() => {
+    const saved = localStorage.getItem("friday_chat_history");
+    if (saved) {
+      try { setMessages(JSON.parse(saved)); } catch(e) {}
+    }
+  }, []);
+
+  // Salva la chat history ogni volta che cambia (ma non le prime volte se è vuota e non l'abbiamo caricata)
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem("friday_chat_history", JSON.stringify(messages));
+    }
+  }, [messages]);
+
   useEffect(() => {
     fetch("/api/tasks").then(r => r.json()).then(d => { if (d.tasks) setTasks(d.tasks); }).catch(() => {});
     fetch("/api/projects").then(r => r.json()).then(d => { if (d.projects) setProjects(d.projects); }).catch(() => {});
@@ -103,6 +118,11 @@ export default function Dashboard() {
         fd.append("audio", blob, "wake.webm");
         const res = await fetch(`${BACKEND_URL}/api/wake-check`, { method: "POST", body: fd });
         const data = await res.json();
+        
+        // Mostra sulla UI cosa ha sentito per capire perché fallisce o no
+        if (data.transcript) {
+            setWakeHeard("Sentito: " + data.transcript.substring(0, 20));
+        }
         
         if (data.detected && wakeEnabledRef.current && modeRef.current === "idle") {
           setWakeHeard("Friday! \u2705");
