@@ -50,6 +50,13 @@ export default function ResourceView({ isMobile }) {
       // Imposta le forze del grafo per renderlo più largo ed elegante stile Obsidian
       fgRef.current.d3Force('charge').strength(-400);
       fgRef.current.d3Force('link').distance(80);
+      
+      // Assicura che il grafo sia ben centrato e scalato
+      setTimeout(() => {
+        if (fgRef.current) {
+          fgRef.current.zoomToFit(400, 50);
+        }
+      }, 500);
     }
   }, [activeTab, selectedResource]);
 
@@ -544,16 +551,16 @@ export default function ResourceView({ isMobile }) {
                     )}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 24px 0 24px'}}>
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 24px 0 24px', flexShrink: 0}}>
                           <Share2 size={32} className="text-green-500" />
                           <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Topologia Neurale</h4>
                         </div>
-                        <p style={{color: 'rgba(255,255,255,0.6)', padding: '0 24px', marginBottom: '12px', maxWidth: '100%'}}>Esplora visivamente i concetti e le risorse collegate interagendo con il grafo.</p>
-                        <div ref={graphContainerRef} style={{flex: 1, width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)'}}>
+                        <p style={{color: 'rgba(255,255,255,0.6)', padding: '0 24px', marginBottom: '12px', maxWidth: '100%', flexShrink: 0}}>Esplora visivamente i concetti e le risorse collegate interagendo con il grafo.</p>
+                        <div ref={graphContainerRef} style={{flex: 1, minHeight: '400px', width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)'}}>
                           <ForceGraph2D
-                            width={graphDimensions.width}
-                            height={graphDimensions.height}
+                            width={graphDimensions.width || 600}
+                            height={graphDimensions.height || 400}
                             graphData={(() => {
                               if (!selectedResource) return { nodes: [], links: [] };
                               const nodes = [{ id: selectedResource.id, name: selectedResource.title, val: 20, color: '#3b82f6' }];
