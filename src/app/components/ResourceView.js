@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Youtube, Globe, BookOpen } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -83,7 +83,7 @@ export default function ResourceView() {
       <div className="resource-suggestions">
         <h3>Fonti Supportate:</h3>
         <div className="sug-tags">
-          <span className="sug-tag"><Youtube size={14}/> Video YouTube</span>
+          <span className="sug-tag"><Video size={14}/> Video YouTube</span>
           <span className="sug-tag"><Globe size={14}/> Articoli Web e Blog</span>
           <span className="sug-tag disabled"><FileText size={14}/> File PDF (Coming Soon)</span>
         </div>
