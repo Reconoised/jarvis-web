@@ -20,7 +20,7 @@ export default function ResourceView() {
   const fetchResources = async () => {
     setLoadingList(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/resources/list`);
+      const res = await fetch(`${BACKEND_URL}/api/resources/list?t=${new Date().getTime()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.status === "success") {
         setResources(data.resources);
