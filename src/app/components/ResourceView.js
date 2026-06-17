@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
-export default function ResourceView() {
+export default function ResourceView({ isMobile }) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState("idle"); // idle, loading, success, error
   const [message, setMessage] = useState("");
@@ -22,6 +22,7 @@ export default function ResourceView() {
   const [activeTab, setActiveTab] = useState("reader"); // "reader", "connections", "graph"
   const [chatContext, setChatContext] = useState("resource"); // "resource", "internet"
   const [videoTime, setVideoTime] = useState(0);
+  const [isFullscreenTranscript, setIsFullscreenTranscript] = useState(false);
 
   const fetchResources = async () => {
     setLoadingList(true);
@@ -248,7 +249,7 @@ export default function ResourceView() {
         {selectedResource && (
           <div className="resource-modal-overlay" onClick={handleCloseModal}>
             <motion.div 
-              className="resource-modal" 
+              className={`resource-modal ${isFullscreenTranscript ? 'fullscreen-transcript' : ''}`} 
               onClick={e => e.stopPropagation()} 
               initial={{ scale: 0.95, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -413,9 +414,17 @@ export default function ResourceView() {
                           )}
                         </div>
                         <div className="modal-summary">
-                          <h4>
-                            <FileText size={16} /> Appunti / Transcript
-                          </h4>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                            <h4 style={{ margin: 0 }}>
+                              <FileText size={16} /> Appunti / Transcript
+                            </h4>
+                            <button 
+                              onClick={() => setIsFullscreenTranscript(!isFullscreenTranscript)}
+                              style={{ background: 'transparent', border: 'none', color: '#60a5fa', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.8rem', textTransform: 'uppercase', fontWeight: 'bold' }}
+                            >
+                              {isFullscreenTranscript ? <><Minimize size={14} /> Riduci</> : <><Maximize size={14} /> Espandi</>}
+                            </button>
+                          </div>
                           <div className="prose">
                             {/* Mockup for Timestamps if it's a video */}
                             {selectedResource.type === 'video' && (
@@ -465,13 +474,19 @@ export default function ResourceView() {
                         <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '24px', maxWidth: '100%', marginLeft: 0}}>Risorse collegate a "{selectedResource.title}"</p>
                         
                         <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                          {resources.filter(r => r.id !== selectedResource.id && (r.tags?.some(t => selectedResource.tags?.includes(t)) || r.topics?.some(t => selectedResource.topics?.includes(t)))).slice(0, 5).map(r => (
+                          {resources.filter(r => r.id !== selectedResource.id && (
+                            (Array.isArray(r.tags) && Array.isArray(selectedResource.tags) && r.tags.some(t => selectedResource.tags.includes(t))) || 
+                            (Array.isArray(r.topics) && Array.isArray(selectedResource.topics) && r.topics.some(t => selectedResource.topics.includes(t)))
+                          )).slice(0, 5).map(r => (
                             <div key={r.id} style={{padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'}} onClick={() => setSelectedResource(r)}>
                               <h5 style={{color: '#60a5fa', margin: '0 0 8px 0', fontSize: '0.95rem'}}>{r.title}</h5>
                               <p style={{color: 'rgba(255,255,255,0.5)', margin: 0, fontSize: '0.85rem'}}>{r.summary}</p>
                             </div>
                           ))}
-                          {resources.filter(r => r.id !== selectedResource.id && (r.tags?.some(t => selectedResource.tags?.includes(t)) || r.topics?.some(t => selectedResource.topics?.includes(t)))).length === 0 && (
+                          {resources.filter(r => r.id !== selectedResource.id && (
+                            (Array.isArray(r.tags) && Array.isArray(selectedResource.tags) && r.tags.some(t => selectedResource.tags.includes(t))) || 
+                            (Array.isArray(r.topics) && Array.isArray(selectedResource.topics) && r.topics.some(t => selectedResource.topics.includes(t)))
+                          )).length === 0 && (
                             <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', margin: 0}}>Nessuna connessione trovata.</p>
                           )}
                         </div>
@@ -484,12 +499,12 @@ export default function ResourceView() {
                         <h4 style={{color: '#fff', fontSize: '1.2rem'}}>Topologia (Mini Grafo)</h4>
                         <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '24px', maxWidth: '100%'}}>I concetti chiave estratti da questa risorsa</p>
                         <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '24px'}}>
-                          {(selectedResource.topics || selectedResource.tags || []).map((t, idx) => (
+                          {(Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : []).map((t, idx) => (
                             <div key={idx} style={{padding: '8px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', color: '#4ade80', fontSize: '0.85rem', whiteSpace: 'nowrap'}}>
                               #{t}
                             </div>
                           ))}
-                          {!(selectedResource.topics || selectedResource.tags || []).length && (
+                          {!(Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : []).length && (
                              <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic'}}>Nessun topic estratto.</p>
                           )}
                         </div>
