@@ -16,6 +16,7 @@ export default function Dashboard() {
   const [audioLevel, setAudioLevel] = useState(0);
   const [wakeEnabled, setWakeEnabled] = useState(false);
   const [wakeStatus, setWakeStatus] = useState("off");
+  const [wakeHeard, setWakeHeard] = useState("");
 
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
@@ -80,24 +81,23 @@ export default function Dashboard() {
       persistentStreamRef.current = stream;
 
       const WAKE_WORDS = [
-        "friday", "fradei", "fraday", "frai dei", "frai day", "fraidei",
-        "hey friday", "ehi friday", "fry day", "fry dei", "fra dei",
-        "fra day", "fride", "fraide", "freday", "free day",
+        "friday", "hey friday", "hey, friday", "a friday",
       ];
 
       const wake = new SR();
       wake.continuous = true;
       wake.interimResults = true;
-      wake.lang = "it-IT";
+      wake.lang = "en-US";  // INGLESE — "Friday" viene riconosciuto bene
 
       wake.onresult = (event) => {
         if (modeRef.current !== "idle") return;
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const text = event.results[i][0].transcript.toLowerCase().trim();
+          setWakeHeard(text); // Debug: mostra cosa sente
           if (WAKE_WORDS.some(w => text.includes(w))) {
-            // Detected!
             try { wake.stop(); } catch(e) {}
             setWakeStatus("detected");
+            setWakeHeard("");
             startRec();
             return;
           }
@@ -105,12 +105,10 @@ export default function Dashboard() {
       };
 
       wake.onerror = (e) => {
-        // "no-speech" è normale, si riavvia da solo
         if (e.error === "aborted") return;
       };
 
       wake.onend = () => {
-        // Riavvia se wake è ancora abilitato e siamo idle
         if (wakeEnabledRef.current && modeRef.current === "idle") {
           setTimeout(() => {
             try { wake.start(); setWakeStatus("listening"); } catch(e) {}
@@ -390,6 +388,7 @@ export default function Dashboard() {
           {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
           {STATUS[mode]}
         </p>
+        {wakeHeard && <p className="wake-debug">{"\uD83D\uDC42"} {wakeHeard}</p>}
 
         <div className="chat">
           {messages.length === 0 && (
