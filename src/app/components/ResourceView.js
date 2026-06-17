@@ -13,6 +13,7 @@ export default function ResourceView({ isMobile }) {
   const [url, setUrl] = useState("");
   const [status, setStatus] = useState("idle"); // idle, loading, success, error
   const [message, setMessage] = useState("");
+  const [uploadProgress, setUploadProgress] = useState(0);
   
   const [resources, setResources] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -131,26 +132,53 @@ export default function ResourceView({ isMobile }) {
     const formData = new FormData();
     formData.append('file', file);
 
-    try {
-      const res = await fetch(`${BACKEND_URL}/api/resources/upload`, {
-        method: "POST",
-        body: formData
-      });
-      const data = await res.json();
-      
-      if (res.ok && data.status === "success") {
-        setStatus("success");
-        setMessage(`Documento assimilato con successo nel Vault!`);
-        fetchResources(); // Refresh the list
-        setTimeout(() => setStatus("idle"), 5000);
-      } else {
-        setStatus("error");
-        setMessage(data.error || "Errore durante l'assimilazione del documento");
+    setUploadProgress(0);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${BACKEND_URL}/api/resources/upload`, true);
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const percentComplete = Math.round((event.loaded / event.total) * 100);
+        setUploadProgress(percentComplete);
+        if (percentComplete === 100) {
+          setMessage(`Upload completato. Analisi IA di ${file.name} in corso...`);
+        } else {
+          setMessage(`Caricamento di ${file.name}: ${percentComplete}%`);
+        }
       }
-    } catch (err) {
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300 && data.status === "success") {
+          setStatus("success");
+          setMessage(`Documento assimilato con successo nel Vault!`);
+          fetchResources();
+          setTimeout(() => {
+            setStatus("idle");
+            setUploadProgress(0);
+          }, 5000);
+        } else {
+          setStatus("error");
+          setMessage(data.error || "Errore durante l'assimilazione del documento");
+          setUploadProgress(0);
+        }
+      } catch (e) {
+        setStatus("error");
+        setMessage("Risposta del server non valida.");
+        setUploadProgress(0);
+      }
+    };
+
+    xhr.onerror = () => {
       setStatus("error");
       setMessage("Errore di connessione durante l'upload.");
-    }
+      setUploadProgress(0);
+    };
+
+    xhr.send(formData);
     
     // Reset the input so the same file can be uploaded again if needed
     if (fileInputRef.current) {
@@ -279,19 +307,35 @@ export default function ResourceView({ isMobile }) {
             {status === "loading" ? <Loader2 className="spinner" size={18} /> : "Assimila"}
           </button>
         </div>
-      </div>
 
-      {status !== "idle" && (
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className={`status-message ${status}`}
-        >
-          {status === "loading" && <Loader2 className="spinner-large" size={24} />}
-          {status === "success" && <CheckCircle2 size={24} />}
-          <span>{message}</span>
-        </motion.div>
-      )}
+        <AnimatePresence>
+          {status !== "idle" && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: 'auto' }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className={`status-message ${status}`}
+              style={{ marginTop: '12px', overflow: 'hidden' }}
+            >
+              {status === "loading" && <Loader2 className="spinner" size={16} />}
+              {status === "success" && <CheckCircle2 size={16} />}
+              {status === "error" && <X size={16} />}
+              <span>{message}</span>
+              
+              {uploadProgress > 0 && uploadProgress < 100 && status === "loading" && (
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${uploadProgress}%` }}
+                    transition={{ duration: 0.2 }}
+                    style={{ height: '100%', background: '#3b82f6', borderRadius: '2px' }}
+                  />
+                </div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* GALLERIA RISORSE */}
       <div className="resource-library">
