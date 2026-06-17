@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
@@ -119,6 +119,45 @@ export default function ResourceView({ isMobile }) {
     }
   };
 
+  const fileInputRef = useRef(null);
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setStatus("loading");
+    setMessage(`Caricamento e analisi di ${file.name} in corso...`);
+
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/resources/upload`, {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      
+      if (res.ok && data.status === "success") {
+        setStatus("success");
+        setMessage(`Documento assimilato con successo nel Vault!`);
+        fetchResources(); // Refresh the list
+        setTimeout(() => setStatus("idle"), 5000);
+      } else {
+        setStatus("error");
+        setMessage(data.error || "Errore durante l'assimilazione del documento");
+      }
+    } catch (err) {
+      setStatus("error");
+      setMessage("Errore di connessione durante l'upload.");
+    }
+    
+    // Reset the input so the same file can be uploaded again if needed
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
   const filteredResources = resources.filter(r => {
     if (filter !== "all" && r.type !== filter) return false;
     if (searchQuery) {
@@ -194,7 +233,7 @@ export default function ResourceView({ isMobile }) {
       </div>
 
       <div className="resource-input-wrapper">
-        <div className="resource-input-box">
+        <div className="resource-input-box" style={{ display: 'flex', alignItems: 'center' }}>
           <Link2 className="input-icon" size={20} />
           <input 
             type="url" 
@@ -202,7 +241,36 @@ export default function ResourceView({ isMobile }) {
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={status === "loading"}
+            style={{ flex: 1 }}
           />
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handleFileUpload} 
+            style={{ display: 'none' }} 
+            accept="application/pdf,image/*,.doc,.docx,.txt"
+          />
+          <button 
+            className="upload-file-btn" 
+            onClick={() => fileInputRef.current?.click()}
+            disabled={status === "loading"}
+            title="Carica un PDF, immagine o documento"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'rgba(255,255,255,0.5)',
+              cursor: 'pointer',
+              padding: '0 12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              transition: 'color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+          >
+            <Paperclip size={20} />
+          </button>
           <button 
             className="assimilate-btn" 
             onClick={handleAssimilate}
