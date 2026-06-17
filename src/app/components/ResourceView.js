@@ -245,7 +245,8 @@ export default function ResourceView() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              <div className="absolute top-5 right-5 z-50 flex items-center space-x-2" style={{ height: '40px' }}>
+              {/* Absolute Close & Delete Buttons */}
+              <div style={{ position: 'absolute', top: '20px', right: '20px', zIndex: 50, display: 'flex', alignItems: 'center', gap: '8px', height: '40px' }}>
                 <AnimatePresence mode="wait">
                   {isDeleting ? (
                     <motion.div 
@@ -254,22 +255,40 @@ export default function ResourceView() {
                       animate={{ width: "auto", opacity: 1, scale: 1 }}
                       exit={{ width: 0, opacity: 0, scale: 0.8 }}
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      className="flex items-center space-x-2 bg-[#1A0505] px-4 py-2 rounded-full border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] backdrop-blur-xl overflow-hidden"
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        background: 'rgba(26, 5, 5, 0.8)', padding: '6px 12px',
+                        borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.3)',
+                        boxShadow: '0 0 15px rgba(239, 68, 68, 0.15)',
+                        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                        overflow: 'hidden'
+                      }}
                     >
-                      <span className="text-red-400 text-sm font-medium whitespace-nowrap mr-2 flex items-center">
-                        Eliminare definitivamente?
+                      <span style={{ color: '#f87171', fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap', marginRight: '4px' }}>
+                        Sicuro?
                       </span>
                       <button 
                         onClick={() => handleDeleteConfirm(selectedResource.id)}
-                        className="flex items-center justify-center px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-semibold transition-all shadow-[0_0_10px_rgba(239,68,68,0.3)] whitespace-nowrap"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '6px 16px', background: '#ef4444', color: '#fff',
+                          borderRadius: '20px', border: 'none', cursor: 'pointer',
+                          fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap',
+                          boxShadow: '0 0 10px rgba(239, 68, 68, 0.3)'
+                        }}
                       >
-                        Conferma
+                        Sì
                       </button>
                       <button 
                         onClick={() => setIsDeleting(false)}
-                        className="flex items-center justify-center px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-full text-sm font-medium transition-all whitespace-nowrap"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          padding: '6px 16px', background: 'rgba(255, 255, 255, 0.05)', color: 'rgba(255, 255, 255, 0.8)',
+                          borderRadius: '20px', border: 'none', cursor: 'pointer',
+                          fontSize: '0.85rem', fontWeight: 500, whiteSpace: 'nowrap'
+                        }}
                       >
-                        Annulla
+                        No
                       </button>
                     </motion.div>
                   ) : (
@@ -278,10 +297,15 @@ export default function ResourceView() {
                       initial={{ opacity: 0, scale: 0.8 }}
                       animate={{ opacity: 1, scale: 1 }}
                       exit={{ opacity: 0, scale: 0.8 }}
-                      whileHover={{ scale: 1.05, backgroundColor: "rgba(239,68,68,0.15)" }}
+                      whileHover={{ scale: 1.05, backgroundColor: "rgba(239, 68, 68, 0.15)" }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setIsDeleting(true)}
-                      className="flex items-center justify-center w-10 h-10 bg-black/40 border border-white/5 text-red-400/80 hover:text-red-400 hover:border-red-500/30 rounded-full backdrop-blur-md transition-all"
+                      style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: '40px', height: '40px', background: 'rgba(0, 0, 0, 0.4)',
+                        border: '1px solid rgba(255, 255, 255, 0.05)', color: 'rgba(248, 113, 113, 0.8)',
+                        borderRadius: '50%', cursor: 'pointer', backdropFilter: 'blur(10px)'
+                      }}
                       title="Elimina Risorsa"
                     >
                       <Trash2 size={18} />
@@ -290,13 +314,18 @@ export default function ResourceView() {
                 </AnimatePresence>
                 
                 <motion.button 
-                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255, 255, 255, 0.1)" }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setSelectedResource(null);
                     setIsDeleting(false);
                   }}
-                  className="flex items-center justify-center w-10 h-10 bg-black/40 border border-white/5 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all"
+                  style={{
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    width: '40px', height: '40px', background: 'rgba(0, 0, 0, 0.4)',
+                    border: '1px solid rgba(255, 255, 255, 0.05)', color: 'rgba(255, 255, 255, 0.7)',
+                    borderRadius: '50%', cursor: 'pointer', backdropFilter: 'blur(10px)'
+                  }}
                   title="Chiudi (Esc)"
                 >
                   <X size={20} />
