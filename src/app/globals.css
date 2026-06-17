@@ -619,41 +619,83 @@ html, body {
 
 .chat-messages-scroll { flex: 1; overflow-y: auto; padding: 16px 0; }
 .chat-messages-scroll::-webkit-scrollbar { display: none; }
-.chat-input-wrapper { position: relative; flex-shrink: 0; }
-.chat-input-wrapper input {
-  width: 100%;
+.chat-input-wrapper {
+  display: flex;
+  align-items: center;
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 9999px;
-  padding: 14px 56px 14px 20px;
-  font-size: 0.95rem;
-  color: #fff;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  outline: none;
+  padding: 6px 6px 6px 16px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 0 0 1px rgba(255,255,255,0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
 }
-.chat-input-wrapper input:focus { border-color: rgba(59,130,246,0.8); background: rgba(255,255,255,0.08); box-shadow: 0 4px 20px rgba(59,130,246,0.2), inset 0 0 0 1px rgba(255,255,255,0.05); }
+.chat-input-wrapper:focus-within {
+  border-color: rgba(59,130,246,0.8);
+  background: rgba(255,255,255,0.08);
+  box-shadow: 0 4px 20px rgba(59,130,246,0.2), inset 0 0 0 1px rgba(255,255,255,0.05);
+}
+.chat-context-selector {
+  display: flex; align-items: center; gap: 6px;
+  padding-right: 12px; border-right: 1px solid rgba(255,255,255,0.1);
+  margin-right: 12px; height: 24px; cursor: pointer;
+}
+.chat-context-selector select {
+  appearance: none; background: transparent; border: none; outline: none;
+  color: rgba(255,255,255,0.8); font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; cursor: pointer;
+}
+.chat-context-selector select option { background: #1a1a1a; color: #fff; }
+.chat-input-wrapper input {
+  flex: 1; background: transparent; border: none; outline: none;
+  color: #fff; font-size: 0.95rem; padding: 8px 0; width: 100%;
+}
 .chat-input-wrapper button {
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(135deg, #2563eb, #4f46e5);
-  color: #fff;
-  border-radius: 50%;
-  border: none;
-  cursor: pointer;
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff;
+  border-radius: 50%; border: none; cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
 }
 .chat-input-wrapper button:disabled { background: rgba(255,255,255,0.1); box-shadow: none; opacity: 0.5; cursor: not-allowed; }
-.chat-input-wrapper button:hover:not(:disabled) { transform: translateY(-50%) scale(1.05); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6); }
+.chat-input-wrapper button:hover:not(:disabled) { transform: scale(1.05); box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6); }
+
+/* Tabs Nav Styling */
+.tabs-nav {
+  display: flex;
+  background: rgba(0,0,0,0.3);
+  padding: 6px;
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.05);
+  margin-bottom: 24px;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.tab-btn {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  padding: 10px 16px;
+  border-radius: 12px;
+  color: rgba(255,255,255,0.5);
+  font-weight: 500; font-size: 0.9rem;
+  border: 1px solid transparent; background: transparent;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.tab-btn.active {
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border-color: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+.tab-btn:hover:not(.active) {
+  color: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.05);
+}
+.tab-btn.reader.active { color: #60a5fa; border-color: rgba(96,165,250,0.2); background: rgba(96,165,250,0.1); }
+.tab-btn.connections.active { color: #c084fc; border-color: rgba(192,132,252,0.2); background: rgba(192,132,252,0.1); }
+.tab-btn.graph.active { color: #34d399; border-color: rgba(52,211,153,0.2); background: rgba(52,211,153,0.1); }
 
 /* Views Placeholders */
 .mockup-view {

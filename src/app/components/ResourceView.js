@@ -562,21 +562,17 @@ export default function ResourceView({ isMobile }) {
                 </div>
 
                 <div className="chat-controls-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  <div className="chat-context-toggle" style={{ alignSelf: 'flex-start', width: 'fit-content' }}>
-                    <button 
-                      onClick={() => setChatContext('resource')}
-                      className={`context-btn ${chatContext === 'resource' ? 'active resource' : ''}`}
-                    >
-                      Solo Risorsa
-                    </button>
-                    <button 
-                      onClick={() => setChatContext('internet')}
-                      className={`context-btn ${chatContext === 'internet' ? 'active internet' : ''}`}
-                    >
-                      <Globe size={12} /> Web + Risorsa
-                    </button>
-                  </div>
                   <div className="chat-input-wrapper">
+                    <div className="chat-context-selector">
+                      <Globe size={14} className={chatContext === 'internet' ? 'text-blue-400' : 'text-gray-500'} />
+                      <select 
+                        value={chatContext} 
+                        onChange={e => setChatContext(e.target.value)}
+                      >
+                        <option value="resource">Solo Risorsa</option>
+                        <option value="internet">Web + Risorsa</option>
+                      </select>
+                    </div>
                     <input 
                       type="text" 
                       placeholder={chatContext === 'resource' ? "Chiedi dettagli sulla risorsa..." : "Cerca online e nella risorsa..."}
