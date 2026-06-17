@@ -211,7 +211,11 @@ export default function ResourceView() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
                 className="resource-card"
-                onClick={() => setSelectedResource(res)}
+                onClick={() => {
+                  setSelectedResource(res);
+                  setChatMessages([]);
+                  setChatInput("");
+                }}
                 style={{ cursor: 'pointer' }}
               >
                 <div className="card-top">
@@ -334,80 +338,109 @@ export default function ResourceView() {
               
               <div className="modal-left">
                 <div className="modal-header-info pr-20">
-                  <h3 className="text-2xl font-bold text-white mb-2">{selectedResource.title}</h3>
-                  <div className="flex items-center space-x-3 text-sm text-white/50">
-                    <span className="flex items-center space-x-1">
-                      <Tag size={14} />
-                      <span>{selectedResource.tags?.join(", ") || "Nessun tag"}</span>
-                    </span>
+                  <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{selectedResource.title}</h3>
+                  <div className="flex items-center flex-wrap gap-2 text-sm">
+                    {selectedResource.tags && selectedResource.tags.length > 0 ? (
+                      selectedResource.tags.map(t => (
+                        <span key={t} className="flex items-center gap-1 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/70 text-xs font-medium">
+                          <Tag size={12} className="text-blue-400" />
+                          {t}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-white/40 italic text-xs">Nessun tag</span>
+                    )}
                   </div>
                 </div>
-                <div className="modal-media">
+                <div className="modal-media mt-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden border border-white/5">
                   {selectedResource.type === 'video' && selectedResource.video_id ? (
                     <iframe 
                       src={`https://www.youtube.com/embed/${selectedResource.video_id}`} 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
+                      className="w-full h-full"
                     ></iframe>
                   ) : selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
                     <iframe 
                       src={`https://www.youtube.com/embed/${selectedResource.id.split('YouTube_')[1].replace('.md', '')}`} 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
                       allowFullScreen
+                      className="w-full h-full"
                     ></iframe>
                   ) : (
-                    <div className="web-preview-box">
-                      <Globe size={40} className="web-icon" style={{ opacity: 0.5, marginBottom: 10 }}/>
-                      <p>{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
-                      {selectedResource.url && <a href={selectedResource.url} target="_blank" rel="noreferrer" style={{color: 'var(--accent)', marginTop: 10, textDecoration: 'none'}}>Apri Originale ↗</a>}
+                    <div className="web-preview-box flex flex-col items-center justify-center p-10 bg-black/40 h-full">
+                      <Globe size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
+                      <p className="text-white/80 font-medium">{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
+                      {selectedResource.url && (
+                        <a href={selectedResource.url} target="_blank" rel="noreferrer" className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium hover:bg-blue-500/30 transition-all border border-blue-500/30">
+                          Apri Originale ↗
+                        </a>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="modal-summary">
-                  <h4>Executive Summary</h4>
-                  <p>{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
+                <div className="modal-summary mt-6 p-5 bg-gradient-to-br from-white/5 to-transparent border border-white/5 rounded-2xl">
+                  <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <FileText size={16} /> Executive Summary
+                  </h4>
+                  <p className="text-white/70 text-sm leading-relaxed">{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
                 </div>
               </div>
 
               <div className="modal-right">
-                <div className="modal-chat-header">
+                <div className="modal-chat-header border-b border-white/10 pb-4">
                   <div className="glow-dot"></div>
-                  <h4>Chat con Friday</h4>
+                  <h4 className="font-semibold tracking-wide">Focus Chat</h4>
                 </div>
                 <div className="modal-chat-area">
                   {chatMessages.length === 0 ? (
                     <div className="empty-chat">Fai una domanda a Friday riguardo a questa specifica risorsa. Il contesto sarà focalizzato al 100% su questo documento.</div>
                   ) : (
                     chatMessages.map((msg, i) => (
-                      <div key={i} className="chat-msg" style={{ 
-                        background: msg.role === 'user' ? 'rgba(255,255,255,0.1)' : 'rgba(0,122,255,0.15)',
-                        padding: '10px 15px', borderRadius: 12, marginBottom: 10,
-                        alignSelf: msg.role === 'user' ? 'flex-end' : 'flex-start',
-                        color: msg.role === 'friday' ? '#5e9cff' : '#fff',
-                        fontSize: '0.9rem', lineHeight: 1.5,
-                        marginLeft: msg.role === 'user' ? '20%' : '0',
-                        marginRight: msg.role === 'friday' ? '20%' : '0'
-                      }}>
-                        {msg.text}
+                      <div key={i} className="flex w-full mb-4" style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
+                        <div className="chat-msg relative" style={{ 
+                          background: msg.role === 'user' ? 'linear-gradient(135deg, rgba(40,40,40,0.8), rgba(20,20,20,0.8))' : 'linear-gradient(135deg, rgba(0,122,255,0.15), rgba(0,80,200,0.1))',
+                          padding: '12px 16px', 
+                          borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                          border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,122,255,0.2)',
+                          color: msg.role === 'friday' ? '#e2e8f0' : '#ffffff',
+                          fontSize: '0.9rem', lineHeight: 1.6,
+                          maxWidth: '85%',
+                          boxShadow: msg.role === 'friday' ? '0 4px 20px rgba(0,122,255,0.05)' : '0 4px 20px rgba(0,0,0,0.2)',
+                          backdropFilter: 'blur(10px)'
+                        }}>
+                          {msg.role === 'friday' && <div className="absolute -top-2 -left-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(59,130,246,0.8)]"><span className="text-[10px] font-bold text-white">F</span></div>}
+                          {msg.text}
+                        </div>
                       </div>
                     ))
                   )}
                   {isChatting && (
-                    <div className="chat-msg" style={{ padding: '10px 15px', borderRadius: 12, marginBottom: 10, alignSelf: 'flex-start', color: '#5e9cff', fontSize: '0.9rem'}}>
-                      <Loader2 size={16} className="spinner" />
+                    <div className="flex w-full mb-4" style={{ justifyContent: 'flex-start' }}>
+                      <div className="chat-msg relative flex items-center justify-center" style={{ padding: '12px 16px', borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(135deg, rgba(0,122,255,0.1), rgba(0,80,200,0.05))', border: '1px solid rgba(0,122,255,0.1)', color: '#5e9cff' }}>
+                        <Loader2 size={16} className="spinner" />
+                        <span className="ml-2 text-xs font-medium opacity-70">Analizzando...</span>
+                      </div>
                     </div>
                   )}
                 </div>
-                <div className="modal-chat-input">
+                <div className="modal-chat-input relative mt-4">
                   <input 
                     type="text" 
-                    placeholder="Chiedi qualcosa sul testo..." 
+                    placeholder="Chiedi dettagli su questa risorsa..." 
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendChat()}
                     disabled={isChatting}
+                    className="w-full bg-[#1A1A1A] border border-white/10 rounded-full py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder-white/30"
                   />
-                  <button onClick={handleSendChat} disabled={isChatting}><Send size={16}/></button>
+                  <button 
+                    onClick={handleSendChat} 
+                    disabled={isChatting || !chatInput.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-white/10 text-white rounded-full transition-all"
+                  >
+                    <Send size={14}/>
+                  </button>
                 </div>
               </div>
             </motion.div>
