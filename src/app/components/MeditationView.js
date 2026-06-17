@@ -5,9 +5,9 @@ import { motion } from "framer-motion";
 import { Play, Square, Wind } from "lucide-react";
 
 const PATTERNS = {
-  stress: { name: "Stress Relief (4-4-4-4)", phases: [{name:"Inspira", time:4}, {name:"Trattieni", time:4}, {name:"Espira", time:4}, {name:"Pausa", time:4}] },
-  relax: { name: "Rilassamento (4-7-8)", phases: [{name:"Inspira", time:4}, {name:"Trattieni", time:7}, {name:"Espira", time:8}, {name:"Pausa", time:4}] },
-  progressive: { name: "Progressivo (3-1-3-1)", phases: [{name:"Inspira", time:3}, {name:"Trattieni", time:1}, {name:"Espira", time:3}, {name:"Pausa", time:1}] }
+  stress: { name: "Stress Relief", desc: "4-4-4-4", phases: [{name:"Inspira", time:4}, {name:"Trattieni", time:4}, {name:"Espira", time:4}, {name:"Pausa", time:4}] },
+  relax: { name: "Rilassamento", desc: "4-7-8", phases: [{name:"Inspira", time:4}, {name:"Trattieni", time:7}, {name:"Espira", time:8}, {name:"Pausa", time:4}] },
+  progressive: { name: "Progressivo", desc: "3-1-3-1", phases: [{name:"Inspira", time:3}, {name:"Trattieni", time:1}, {name:"Espira", time:3}, {name:"Pausa", time:1}] }
 };
 
 export default function MeditationView() {
@@ -17,22 +17,31 @@ export default function MeditationView() {
   const [timeLeft, setTimeLeft] = useState(0);
 
   const timerRef = useRef(null);
-  const synthRef = useRef(null);
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      synthRef.current = window.speechSynthesis;
-    }
-  }, []);
-
-  const speak = (text) => {
-    if (!synthRef.current) return;
-    synthRef.current.cancel();
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "it-IT";
-    utterance.rate = 0.9; // Leggermente più lento per rilassamento
-    utterance.pitch = 0.8;
-    synthRef.current.speak(utterance);
+  const playChime = (phaseName) => {
+    try {
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      const ctx = new AudioContext();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      
+      // Frequenze Zen (Solfeggio)
+      const freqs = { "Inspira": 432, "Trattieni": 528, "Espira": 396, "Pausa": 396 };
+      
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(freqs[phaseName] || 432, ctx.currentTime);
+      
+      // Campana tibetana morbida (ADSR envelope)
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.3, ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 2.5);
+      
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 3);
+    } catch(e) {}
   };
 
   const startMeditation = () => {
@@ -40,13 +49,12 @@ export default function MeditationView() {
     setPhaseIndex(0);
     const pattern = PATTERNS[activePattern].phases;
     setTimeLeft(pattern[0].time);
-    speak(pattern[0].name);
+    playChime(pattern[0].name);
   };
 
   const stopMeditation = () => {
     setIsRunning(false);
     if (timerRef.current) clearInterval(timerRef.current);
-    if (synthRef.current) synthRef.current.cancel();
   };
 
   useEffect(() => {
@@ -60,64 +68,68 @@ export default function MeditationView() {
         const pattern = PATTERNS[activePattern].phases;
         const nextIndex = (phaseIndex + 1) % pattern.length;
         setPhaseIndex(nextIndex);
-        speak(pattern[nextIndex].name);
+        playChime(pattern[nextIndex].name);
         return pattern[nextIndex].time;
       });
     }, 1000);
 
-    return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
+    return () => clearInterval(timerRef.current);
   }, [isRunning, activePattern, phaseIndex]);
 
-  const currentPhaseName = isRunning ? PATTERNS[activePattern].phases[phaseIndex].name : "Pronto";
+  const currentPhaseName = isRunning ? PATTERNS[activePattern].phases[phaseIndex].name : "Respira.";
   
-  // Calcolo Scala Orb
+  // Animazione super fluida
   let scale = 1;
+  let opacity = 0.5;
   if (isRunning) {
-    if (currentPhaseName === "Inspira") scale = 1.6;
-    else if (currentPhaseName === "Espira") scale = 0.7;
-    else if (phaseIndex === 1) scale = 1.6; // Trattieni dopo inspira (grande)
-    else scale = 0.7; // Pausa dopo espira (piccolo)
+    if (currentPhaseName === "Inspira") { scale = 1.8; opacity = 0.9; }
+    else if (currentPhaseName === "Espira") { scale = 0.6; opacity = 0.3; }
+    else if (phaseIndex === 1) { scale = 1.8; opacity = 0.9; } // Trattieni (pieno)
+    else { scale = 0.6; opacity = 0.3; } // Pausa (vuoto)
   }
 
-  const currentDuration = isRunning ? PATTERNS[activePattern].phases[phaseIndex].time : 1;
+  const currentDuration = isRunning ? PATTERNS[activePattern].phases[phaseIndex].time : 2;
 
   return (
     <div className="meditation-container">
-      <div className="meditation-header">
-        <h2><Wind size={24} /> Respiro Guidato</h2>
+      
+      <div className="meditation-top">
         <div className="pattern-selectors">
           {Object.keys(PATTERNS).map(k => (
-            <button 
+            <div 
               key={k} 
-              className={`pattern-btn ${activePattern === k ? "active" : ""}`}
+              className={`zen-pill ${activePattern === k ? "active" : ""}`}
               onClick={() => !isRunning && setActivePattern(k)}
-              disabled={isRunning}
+              style={{ opacity: isRunning && activePattern !== k ? 0.3 : 1 }}
             >
-              {PATTERNS[k].name}
-            </button>
+              <span className="zen-name">{PATTERNS[k].name}</span>
+              <span className="zen-desc">{PATTERNS[k].desc}</span>
+            </div>
           ))}
         </div>
       </div>
 
-      <div className="meditation-orb-wrapper">
-        <motion.div 
-          className="breathing-orb"
-          animate={{ scale }}
-          transition={{ duration: currentDuration, ease: "easeInOut" }}
-        />
-        <div className="orb-text">
-          <h3>{currentPhaseName}</h3>
-          {isRunning && <span className="time-left">{timeLeft}s</span>}
+      <div className="meditation-center">
+        <div className="zen-orb-wrapper">
+          <motion.div 
+            className="zen-orb"
+            animate={{ scale, opacity }}
+            transition={{ duration: currentDuration, ease: "easeInOut" }}
+          />
+          <div className="zen-orb-core" />
+        </div>
+        
+        <div className="zen-text-layer">
+          <h3 className="zen-instruction">{currentPhaseName}</h3>
+          {isRunning && <span className="zen-timer">{timeLeft}</span>}
         </div>
       </div>
 
-      <div className="meditation-controls">
+      <div className="meditation-bottom">
         {!isRunning ? (
-          <button className="play-btn" onClick={startMeditation}><Play size={18} /> Inizia Sessione</button>
+          <button className="zen-btn play" onClick={startMeditation}>Inizia</button>
         ) : (
-          <button className="stop-btn" onClick={stopMeditation}><Square size={18} /> Termina</button>
+          <button className="zen-btn stop" onClick={stopMeditation}>Termina</button>
         )}
       </div>
     </div>

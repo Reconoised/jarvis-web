@@ -107,6 +107,112 @@ html, body {
 }
 .placeholder-view h1 { font-size: 2rem; margin-bottom: 10px; color: var(--fg); }
 
+/* === MEDITATION MODULE (ZEN PREMIUM) === */
+
+.meditation-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  width: 100%;
+  padding: 40px 20px;
+  background: radial-gradient(circle at center, rgba(0, 122, 255, 0.05) 0%, transparent 70%);
+}
+
+.meditation-top {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.pattern-selectors {
+  display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+  background: rgba(255,255,255,0.03);
+  padding: 8px; border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.05);
+}
+
+.zen-pill {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 10px 20px; border-radius: 24px;
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: transparent;
+}
+.zen-pill.active {
+  background: rgba(255,255,255,0.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.zen-name { font-size: 0.85rem; font-weight: 500; color: var(--fg); }
+.zen-desc { font-size: 0.65rem; color: var(--fg-muted); letter-spacing: 1px; margin-top: 2px; }
+
+.meditation-center {
+  position: relative;
+  width: 350px; height: 350px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.zen-orb-wrapper {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.zen-orb {
+  position: absolute;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(100, 180, 255, 0.8), rgba(0, 122, 255, 0.2));
+  filter: blur(25px);
+  z-index: 1;
+}
+
+.zen-orb-core {
+  position: absolute;
+  width: 140px; height: 140px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.1);
+  backdrop-filter: blur(10px);
+  z-index: 2;
+}
+
+.zen-text-layer {
+  position: relative; z-index: 3;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+.zen-instruction {
+  font-size: 2.2rem; font-weight: 200; letter-spacing: 4px;
+  color: #fff; margin: 0; text-transform: uppercase;
+}
+
+.zen-timer {
+  font-size: 1.2rem; font-weight: 400; color: var(--fg-muted);
+  margin-top: 8px; font-variant-numeric: tabular-nums;
+}
+
+.meditation-bottom {
+  width: 100%;
+  display: flex; justify-content: center;
+}
+
+.zen-btn {
+  padding: 16px 40px; border-radius: 40px;
+  font-size: 1rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase;
+  border: none; cursor: pointer; transition: all 0.3s;
+  backdrop-filter: blur(20px);
+}
+.zen-btn.play {
+  background: rgba(255,255,255,0.9); color: #000;
+  box-shadow: 0 0 20px rgba(255,255,255,0.2);
+}
+.zen-btn.stop {
+  background: rgba(255,60,60,0.15); color: #ff6b6b;
+  border: 1px solid rgba(255,60,60,0.3);
+}
+.zen-btn:active { transform: scale(0.95); }
+
 @media (max-width: 1024px) {
   .app-container {
     flex-direction: column-reverse;
