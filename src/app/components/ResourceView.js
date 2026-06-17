@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
@@ -79,6 +79,8 @@ export default function ResourceView({ isMobile }) {
     fetchResources();
   }, []);
 
+  const [attachmentUrl, setAttachmentUrl] = useState(null);
+
   useEffect(() => {
     const handleOpenResource = (e) => {
       const targetId = e.detail;
@@ -90,6 +92,20 @@ export default function ResourceView({ isMobile }) {
     window.addEventListener('friday_open_resource', handleOpenResource);
     return () => window.removeEventListener('friday_open_resource', handleOpenResource);
   }, [resources]);
+
+  useEffect(() => {
+    if (selectedResource && selectedResource.type === 'document' && selectedResource.attachment_link) {
+      setAttachmentUrl(null); // Reset
+      fetch(`${BACKEND_URL}/api/resources/attachment?path=${encodeURIComponent(selectedResource.attachment_link)}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.url) setAttachmentUrl(data.url);
+        })
+        .catch(err => console.error(err));
+    } else {
+      setAttachmentUrl(null);
+    }
+  }, [selectedResource]);
 
   const handleAssimilate = async () => {
     if (!url.trim()) return;
@@ -570,6 +586,61 @@ export default function ResourceView({ isMobile }) {
                               allowFullScreen
                               className="w-full h-full"
                             ></iframe>
+                          ) : selectedResource.type === 'document' ? (
+                            <div className="web-preview-box" style={{ padding: 0, position: 'relative', overflow: 'hidden' }}>
+                              {attachmentUrl ? (
+                                selectedResource.attachment_link?.toLowerCase().endsWith('.pdf') ? (
+                                  <iframe 
+                                    src={`https://docs.google.com/viewer?url=${encodeURIComponent(attachmentUrl)}&embedded=true`}
+                                    className="w-full h-full"
+                                    style={{ border: 'none' }}
+                                  />
+                                ) : selectedResource.attachment_link?.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/) ? (
+                                  <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#000' }}>
+                                    <img src={attachmentUrl} alt="Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                                  </div>
+                                ) : (
+                                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                                    <FileText size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
+                                    <p className="text-white/80 font-medium">Documento Salvato</p>
+                                  </div>
+                                )
+                              ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', width: '100%' }}>
+                                  <Loader2 className="spinner mb-4 text-blue-500" size={32} />
+                                  <p className="text-white/80 font-medium">Recupero file originale in corso...</p>
+                                </div>
+                              )}
+                              
+                              {attachmentUrl && (
+                                <a 
+                                  href={attachmentUrl} 
+                                  download 
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="download-fab hover:scale-105 transition-transform"
+                                  style={{
+                                    position: 'absolute',
+                                    bottom: '16px',
+                                    right: '16px',
+                                    background: '#3b82f6',
+                                    color: '#fff',
+                                    padding: '10px 16px',
+                                    borderRadius: '50px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.85rem',
+                                    boxShadow: '0 4px 15px rgba(59,130,246,0.4)',
+                                    textDecoration: 'none',
+                                    zIndex: 10
+                                  }}
+                                >
+                                  <Download size={16} /> Scarica File
+                                </a>
+                              )}
+                            </div>
                           ) : (
                             <div className="web-preview-box">
                               <Globe size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
