@@ -106,9 +106,27 @@ export default function ResourceView() {
     setIsChatting(false);
   };
 
+  const handleDeleteConfirm = async (id) => {
+    try {
+      setIsDeleting(false);
+      const res = await fetch(`${BACKEND_URL}/api/resources/delete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: id })
+      });
+      if (res.ok) {
+        setFilteredResources(prev => prev.filter(r => r.id !== id));
+        setSelectedResource(null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleCloseModal = () => {
     setSelectedResource(null);
     setChatMessages([]);
+    setIsDeleting(false);
   };
 
   return (
