@@ -239,11 +239,17 @@ export default function Dashboard() {
         if (match) {
           const resourceId = match[1].trim();
           text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
-          if (!text) text = "Apro subito la risorsa.";
-          setCurrentView("Risorse");
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
-          }, 600);
+          
+          if (resourceId.startsWith("http://") || resourceId.startsWith("https://")) {
+            if (!text) text = "Apro subito il sito.";
+            window.open(resourceId, '_blank');
+          } else {
+            if (!text) text = "Apro subito la risorsa.";
+            setCurrentView("Risorse");
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
+            }, 600);
+          }
         }
         setMessages(prev => [...prev, { role: "assistant", text: text }]);
         speakNeural(text);
@@ -274,11 +280,17 @@ export default function Dashboard() {
         if (match) {
           const resourceId = match[1].trim();
           text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
-          if (!text) text = "Apro subito la risorsa.";
-          setCurrentView("Risorse");
-          setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
-          }, 600);
+          
+          if (resourceId.startsWith("http://") || resourceId.startsWith("https://")) {
+            if (!text) text = "Apro subito il sito.";
+            window.open(resourceId, '_blank');
+          } else {
+            if (!text) text = "Apro subito la risorsa.";
+            setCurrentView("Risorse");
+            setTimeout(() => {
+              window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
+            }, 600);
+          }
         }
         setMessages(prev => [...prev, { role: "assistant", text: text }]);
         speakNeural(text);
