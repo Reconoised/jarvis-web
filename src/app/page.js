@@ -1,21 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
 export default function Dashboard() {
-  const [theme, setTheme] = useState("dark");
   const [mode, setMode] = useState("idle"); // idle | recording | thinking | speaking
   const [messages, setMessages] = useState([]);
   const [tasks, setTasks] = useState([]);
-  const [projects, setProjects] = useState([]);
-  const [recentFiles, setRecentFiles] = useState([]);
   const [inputText, setInputText] = useState("");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [wakeEnabled, setWakeEnabled] = useState(false);
-  const [wakeStatus, setWakeStatus] = useState("off");
   const [wakeHeard, setWakeHeard] = useState("");
 
   const mediaRecorderRef = useRef(null);
@@ -28,17 +26,12 @@ export default function Dashboard() {
   const modeRef = useRef("idle");
   const audioPlayerRef = useRef(null);
 
-  // Wake word refs
   const wakeStreamRef = useRef(null);
-  const wakeIntervalRef = useRef(null);
   const wakeEnabledRef = useRef(false);
 
-  // Sync mode ref
   useEffect(() => { modeRef.current = mode; }, [mode]);
-  useEffect(() => { document.documentElement.setAttribute("data-theme", theme); }, [theme]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
-  // Recupera la chat history salvata
   useEffect(() => {
     const saved = localStorage.getItem("friday_chat_history");
     if (saved) {
@@ -46,7 +39,6 @@ export default function Dashboard() {
     }
   }, []);
 
-  // Salva la chat history ogni volta che cambia (ma non le prime volte se è vuota e non l'abbiamo caricata)
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem("friday_chat_history", JSON.stringify(messages));
@@ -55,11 +47,8 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetch("/api/tasks").then(r => r.json()).then(d => { if (d.tasks) setTasks(d.tasks); }).catch(() => {});
-    fetch("/api/projects").then(r => r.json()).then(d => { if (d.projects) setProjects(d.projects); }).catch(() => {});
-    fetch("/api/recent").then(r => r.json()).then(d => { if (d.files) setRecentFiles(d.files); }).catch(() => {});
   }, []);
 
-  // Shortcut
   useEffect(() => {
     const h = (e) => {
       if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
@@ -70,14 +59,12 @@ export default function Dashboard() {
     return () => window.removeEventListener("keydown", h);
   });
 
-  // Audio player per TTS
   useEffect(() => {
     audioPlayerRef.current = new Audio();
     audioPlayerRef.current.addEventListener("ended", () => setMode("idle"));
     audioPlayerRef.current.addEventListener("error", () => setMode("idle"));
   }, []);
 
-  // ===== WAKE WORD via Backend (Gemini) =====
   function toggleWake() {
     if (wakeEnabled) stopWake();
     else startWake();
@@ -89,7 +76,6 @@ export default function Dashboard() {
       wakeStreamRef.current = stream;
       wakeEnabledRef.current = true;
       setWakeEnabled(true);
-      setWakeStatus("listening");
       runWakeLoop(stream);
     } catch(err) {
       alert("Errore microfono: " + err.message);
@@ -98,8 +84,6 @@ export default function Dashboard() {
 
   function runWakeLoop(stream) {
     if (!wakeEnabledRef.current || !stream.active) return;
-
-    // Registra 3 secondi
     const rec = new MediaRecorder(stream);
     const chunks = [];
     rec.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
@@ -107,27 +91,22 @@ export default function Dashboard() {
       if (!wakeEnabledRef.current) return;
       const blob = new Blob(chunks, { type: "audio/webm" });
       if (blob.size < 500) {
-        // Silenzio, riprova
         if (wakeEnabledRef.current && modeRef.current === "idle") runWakeLoop(stream);
         return;
       }
       
-      setWakeHeard("analisi...");
       try {
         const fd = new FormData();
         fd.append("audio", blob, "wake.webm");
         const res = await fetch(`${BACKEND_URL}/api/wake-check`, { method: "POST", body: fd });
         const data = await res.json();
         
-        // Mostra sulla UI cosa ha sentito per capire perché fallisce o no
         if (data.transcript) {
-            setWakeHeard("Sentito: " + data.transcript.substring(0, 20));
+            setWakeHeard(data.transcript.substring(0, 20));
         }
         
         if (data.detected && wakeEnabledRef.current && modeRef.current === "idle") {
-          setWakeHeard("Friday! \u2705");
-          setWakeStatus("detected");
-          // Stoppa lo stream wake e avvia registrazione vera
+          setWakeHeard("Friday!");
           stream.getTracks().forEach(t => t.stop());
           wakeStreamRef.current = null;
           startRec();
@@ -135,21 +114,16 @@ export default function Dashboard() {
         }
       } catch(e) {}
       
-      setWakeHeard("");
-      // Continua il loop
       if (wakeEnabledRef.current && modeRef.current === "idle") runWakeLoop(stream);
     };
 
     rec.start();
-    setTimeout(() => {
-      if (rec.state === "recording") rec.stop();
-    }, 3000);
+    setTimeout(() => { if (rec.state === "recording") rec.stop(); }, 3000);
   }
 
   function stopWake() {
     wakeEnabledRef.current = false;
     setWakeEnabled(false);
-    setWakeStatus("off");
     setWakeHeard("");
     if (wakeStreamRef.current) {
       wakeStreamRef.current.getTracks().forEach(t => t.stop());
@@ -159,31 +133,19 @@ export default function Dashboard() {
 
   function restartWake() {
     if (!wakeEnabledRef.current) return;
-    setTimeout(() => {
-      if (modeRef.current === "idle") startWake();
-    }, 1000);
+    setTimeout(() => { if (modeRef.current === "idle") startWake(); }, 1000);
   }
 
-  // ===== ORB CLICK =====
   function handleOrbClick() {
-    if (mode === "recording") {
-      stopRec();
-    } else if (mode === "speaking") {
-      stopSpeaking();
-    } else if (mode === "idle") {
-      startRec();
-    }
+    if (mode === "recording") stopRec();
+    else if (mode === "speaking") stopSpeaking();
+    else if (mode === "idle") startRec();
   }
 
-  // ===== REGISTRAZIONE =====
   async function startRec() {
     try {
-      // Pausa wake word
-      try { wakeRecRef.current?.stop(); } catch(e) {}
-
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
-      // Audio visualizer
       const ctx = new (window.AudioContext || window.webkitAudioContext)();
       const source = ctx.createMediaStreamSource(stream);
       const analyser = ctx.createAnalyser();
@@ -201,7 +163,6 @@ export default function Dashboard() {
       }
       tick();
 
-      // MediaRecorder
       const rec = new MediaRecorder(stream);
       audioChunksRef.current = [];
       rec.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
@@ -221,10 +182,8 @@ export default function Dashboard() {
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch (err) {
-      console.error("Mic error:", err);
       alert("Errore microfono: " + err.message);
-      setMode("idle");
-      restartWake();
+      setMode("idle"); restartWake();
     }
   }
 
@@ -236,10 +195,9 @@ export default function Dashboard() {
     }
   }
 
-  // ===== INVIO AUDIO =====
   async function sendAudio(blob) {
     setMode("thinking");
-    setMessages(prev => [...prev, { role: "user", text: "\uD83C\uDF99\uFE0F Messaggio vocale" }]);
+    setMessages(prev => [...prev, { role: "user", text: "🎙️ Messaggio vocale" }]);
     try {
       const fd = new FormData();
       fd.append("audio", blob, "rec.webm");
@@ -258,7 +216,6 @@ export default function Dashboard() {
     }
   }
 
-  // ===== INVIO TESTO =====
   async function sendText(text) {
     if (!text.trim() || mode === "thinking") return;
     setMessages(prev => [...prev, { role: "user", text }]);
@@ -283,7 +240,6 @@ export default function Dashboard() {
     }
   }
 
-  // ===== TTS NEURALE (Edge TTS dal backend) =====
   async function speakNeural(text) {
     setMode("speaking");
     try {
@@ -301,8 +257,6 @@ export default function Dashboard() {
       player.onerror = () => { setMode("idle"); URL.revokeObjectURL(url); restartWake(); };
       player.play();
     } catch (err) {
-      console.error("TTS error:", err);
-      // Fallback: browser TTS
       fallbackSpeak(text);
     }
   }
@@ -340,115 +294,107 @@ export default function Dashboard() {
   }
 
   const ft = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
-  const scale = mode === "recording" ? 1 + audioLevel * 0.3 : 1;
-  const glow = mode === "recording" ? 30 + audioLevel * 80 : 0;
 
   const STATUS = {
-    idle: wakeEnabled ? "In ascolto per 'Hey Friday'..." : "Premi Spazio o tocca l'orb",
-    recording: `Sto ascoltando... \u2022 ${ft(recordingTime)}`,
-    thinking: "Sto pensando...",
-    speaking: "Friday sta parlando...",
+    idle: wakeEnabled ? "In ascolto..." : "Pronto",
+    recording: `Ascoltando... ${ft(recordingTime)}`,
+    thinking: "Elaborazione...",
+    speaking: "Risposta in corso...",
   };
 
   return (
     <main className="dashboard">
-      <aside className="panel">
-        <section>
-          <h3 className="widget-title">{"\u2713"} Task Attive</h3>
-          {tasks.length === 0 && <p className="empty">Nessuna task</p>}
-          {tasks.map((t, i) => (
-            <div key={i} className={`task ${t.isDone ? "done" : ""}`}>
-              <span className={`dot ${t.isDone ? "checked" : ""}`} />
-              <span>{t.text}</span>
-            </div>
-          ))}
-        </section>
-        <section>
-          <h3 className="widget-title">{"\u25B6"} Progetti</h3>
-          {projects.length === 0 && <p className="empty">Nessun progetto</p>}
-          {projects.map((p, i) => (
-            <div key={i} className="project-item">
-              <span className="project-status">{"\u25CF"}</span>
-              <span>{p.name}</span>
-            </div>
-          ))}
-        </section>
-      </aside>
-
-      <div className="center">
-        <div className="top-bar">
-          <span className="brand">FRIDAY</span>
-          <div className="top-actions">
-            <button className={`wake-toggle ${wakeEnabled ? "on" : ""}`} onClick={toggleWake} title="Hey Friday wake word">
-              {wakeEnabled ? "\uD83C\uDF99 WAKE" : "\uD83C\uDF99 OFF"}
-            </button>
-            <button className="theme-toggle" onClick={() => setTheme(t => t === "dark" ? "light" : "dark")}>
-              {theme === "dark" ? "\u2600" : "\u263D"}
-            </button>
-          </div>
-        </div>
-
-        <div className={`orb-wrapper ${mode !== "idle" ? "active" : ""}`}>
-          <div className="orb-ring" />
-          <div className="orb-ring ring-2" />
-          <div
-            className={`orb ${mode}`}
-            onClick={handleOrbClick}
-            style={mode === "recording" ? {
-              transform: `scale(${scale})`,
-              boxShadow: `0 0 ${glow}px rgba(120,90,255,${0.3 + audioLevel * 0.5})`
-            } : {}}
-          />
-        </div>
-
-        <p className="status">
-          {mode === "recording" && <span className="rec-dot" />}
-          {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
-          {STATUS[mode]}
-        </p>
-        {wakeHeard && <p className="wake-debug">{"\uD83D\uDC42"} {wakeHeard}</p>}
-
-        <div className="chat">
-          {messages.length === 0 && (
-            <div className="empty-chat">
-              <p>{"Premi Spazio o tocca l'orb per parlare a Friday."}</p>
-              <p className="hint">Attiva WAKE per il comando vocale 'Hey Friday'</p>
-              <p className="hint">Spazio = mic \u2022 Esc = interrompi</p>
-            </div>
-          )}
-          {messages.map((m, i) => (
-            <div key={i} className={`msg ${m.role}`}>
-              <span className="label">{m.role === "user" ? "Tu" : "Friday"}</span>
-              <p>{m.text}</p>
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+      <div className="top-bar">
+        <span className="brand">FRIDAY OS</span>
       </div>
 
-      <aside className="panel">
-        <section>
-          <h3 className="widget-title">{"\u23F0"} File Recenti</h3>
-          {recentFiles.length === 0 && <p className="empty">Nessun file</p>}
-          {recentFiles.map((f, i) => (
-            <div key={i} className="recent-item"><span>{"\u2022"}</span><span>{f}</span></div>
-          ))}
-        </section>
-        <section>
-          <h3 className="widget-title">{"\uD83D\uDCAC"} Ultime Risposte</h3>
-          {messages.filter(m => m.role === "assistant").slice(-5).map((m, i) => (
-            <div key={i} className="recent-item">
-              <span>{m.text.substring(0, 55)}{m.text.length > 55 ? "..." : ""}</span>
-            </div>
-          ))}
-        </section>
-      </aside>
+      <div className="bento-grid">
+        
+        {/* WIDGET 1: Friday Orb */}
+        <motion.div className="bento-item orb-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}}>
+          <h3 className="widget-title"><BrainCircuit size={16} /> Friday Core</h3>
+          
+          <div className="orb-container">
+            <div className="orb-rings" />
+            <div 
+              className={`orb ${mode}`} 
+              onClick={handleOrbClick}
+              style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
+            />
+          </div>
 
-      <div className="bar">
-        <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} accept=".txt,.md,.pdf,.csv,.json" />
-        <button className="icon-btn" onClick={() => fileInputRef.current?.click()}>{"\uD83D\uDCCE"}</button>
-        <input className="text-input" placeholder="Scrivi a Friday..." value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => { if (e.key === "Enter") handleSendText(); }} />
-        <button className="send" onClick={handleSendText} disabled={mode === "thinking"}>{mode === "thinking" ? "\u2026" : "\u2192"}</button>
+          <div className="status-text">
+            {mode === "recording" && <span className="rec-dot" />}
+            {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
+            {STATUS[mode]}
+          </div>
+
+          <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
+            {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+            {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
+          </button>
+          
+          {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
+        </motion.div>
+
+        {/* WIDGET 2: Focus del Giorno */}
+        <motion.div className="bento-item focus-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.2}}>
+          <h3 className="widget-title"><ListTodo size={16} /> Focus del Giorno</h3>
+          
+          {tasks.length === 0 ? (
+            <div className="empty-state">Nessuna task per oggi.</div>
+          ) : (
+            <div className="task-list">
+              {tasks.map((t, i) => (
+                <div key={i} className={`task ${t.isDone ? "done" : ""}`}>
+                  {t.isDone ? <CheckCircle2 size={18} className="dot checked" /> : <Circle size={18} className="dot" />}
+                  <span>{t.text}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* WIDGET 3: Brain Inbox (Chat & Input) */}
+        <motion.div className="bento-item inbox-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}}>
+          <h3 className="widget-title"><MessageSquare size={16} /> Brain Inbox</h3>
+          
+          <div className="chat">
+            {messages.length === 0 && (
+              <div className="empty-state">Invia un pensiero veloce o chiedi qualcosa a Friday.</div>
+            )}
+            <AnimatePresence>
+              {messages.map((m, i) => (
+                <motion.div 
+                  key={i} 
+                  initial={{opacity:0, x: m.role==="user" ? 20 : -20}} 
+                  animate={{opacity:1, x:0}}
+                  className={`msg ${m.role}`}
+                >
+                  <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
+                  {m.text}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            <div ref={messagesEndRef} />
+          </div>
+
+          <div className="input-bar">
+            <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} accept=".txt,.md,.pdf,.csv,.json" />
+            <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><Paperclip size={18} /></button>
+            <input 
+              className="text-input" 
+              placeholder="Scrivi qui..." 
+              value={inputText} 
+              onChange={e => setInputText(e.target.value)} 
+              onKeyDown={e => { if (e.key === "Enter") handleSendText(); }} 
+            />
+            <button className="send-btn" onClick={handleSendText} disabled={mode === "thinking"}>
+              <Send size={16} />
+            </button>
+          </div>
+        </motion.div>
+
       </div>
     </main>
   );
