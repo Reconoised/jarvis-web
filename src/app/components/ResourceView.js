@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2 } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -17,6 +17,11 @@ export default function ResourceView() {
   const [loadingList, setLoadingList] = useState(true);
   const [selectedResource, setSelectedResource] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // New states for NotebookLM layout
+  const [activeTab, setActiveTab] = useState("reader"); // "reader", "connections", "graph"
+  const [chatContext, setChatContext] = useState("resource"); // "resource", "internet"
+  const [videoTime, setVideoTime] = useState(0);
 
   const fetchResources = async () => {
     setLoadingList(true);
@@ -91,7 +96,7 @@ export default function ResourceView() {
       const res = await fetch(`${BACKEND_URL}/api/resources/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userMsg, resource_path: selectedResource.id })
+        body: JSON.stringify({ message: userMsg, resource_path: selectedResource.id, context: chatContext })
       });
       const data = await res.json();
       
@@ -336,8 +341,8 @@ export default function ResourceView() {
                 </motion.button>
               </div>
               
-              <div className="modal-left">
-                <div className="modal-header-info pr-20">
+              <div className="modal-left flex flex-col h-full">
+                <div className="modal-header-info pr-20 shrink-0">
                   <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{selectedResource.title}</h3>
                   <div className="flex items-center flex-wrap gap-2 text-sm">
                     {selectedResource.tags && selectedResource.tags.length > 0 ? (
@@ -352,49 +357,132 @@ export default function ResourceView() {
                     )}
                   </div>
                 </div>
-                <div className="modal-media mt-4 shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden border border-white/5">
-                  {selectedResource.type === 'video' && selectedResource.video_id ? (
-                    <iframe 
-                      src={`https://www.youtube.com/embed/${selectedResource.video_id}`} 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen
-                      className="w-full h-full"
-                    ></iframe>
-                  ) : selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
-                    <iframe 
-                      src={`https://www.youtube.com/embed/${selectedResource.id.split('YouTube_')[1].replace('.md', '')}`} 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen
-                      className="w-full h-full"
-                    ></iframe>
-                  ) : (
-                    <div className="web-preview-box flex flex-col items-center justify-center p-10 bg-black/40 h-full">
-                      <Globe size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
-                      <p className="text-white/80 font-medium">{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
-                      {selectedResource.url && (
-                        <a href={selectedResource.url} target="_blank" rel="noreferrer" className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium hover:bg-blue-500/30 transition-all border border-blue-500/30">
-                          Apri Originale ↗
-                        </a>
-                      )}
-                    </div>
-                  )}
+
+                {/* TABS NAVIGATION */}
+                <div className="flex items-center gap-2 mt-6 mb-4 border-b border-white/10 pb-2 shrink-0 overflow-x-auto hide-scrollbar">
+                  <button 
+                    onClick={() => setActiveTab('reader')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'reader' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                  >
+                    <FileText size={16} /> Reader
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('connections')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'connections' ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                  >
+                    <Network size={16} /> Connessioni
+                  </button>
+                  <button 
+                    onClick={() => setActiveTab('graph')}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${activeTab === 'graph' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'text-white/50 hover:bg-white/5 hover:text-white/80'}`}
+                  >
+                    <BrainCircuit size={16} /> Mini Grafo
+                  </button>
                 </div>
-                <div className="modal-summary mt-6 p-5 bg-gradient-to-br from-white/5 to-transparent border border-white/5 rounded-2xl">
-                  <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-2 flex items-center gap-2">
-                    <FileText size={16} /> Executive Summary
-                  </h4>
-                  <p className="text-white/70 text-sm leading-relaxed">{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
+
+                {/* TAB CONTENT */}
+                <div className="flex-1 overflow-y-auto hide-scrollbar pr-2 pb-4">
+                  <AnimatePresence mode="wait">
+                    {activeTab === 'reader' && (
+                      <motion.div key="reader" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="flex flex-col gap-6">
+                        <div className="modal-media shadow-[0_0_30px_rgba(0,0,0,0.5)] rounded-2xl overflow-hidden border border-white/5 aspect-video w-full shrink-0">
+                          {selectedResource.type === 'video' && selectedResource.video_id ? (
+                            <iframe 
+                              src={`https://www.youtube.com/embed/${selectedResource.video_id}?autoplay=0&start=${videoTime}`} 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                              allowFullScreen
+                              className="w-full h-full"
+                            ></iframe>
+                          ) : selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
+                            <iframe 
+                              src={`https://www.youtube.com/embed/${selectedResource.id.split('YouTube_')[1].replace('.md', '')}?autoplay=0&start=${videoTime}`} 
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                              allowFullScreen
+                              className="w-full h-full"
+                            ></iframe>
+                          ) : (
+                            <div className="web-preview-box flex flex-col items-center justify-center p-10 bg-black/40 h-full w-full">
+                              <Globe size={48} className="text-blue-500/50 mb-4 drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]"/>
+                              <p className="text-white/80 font-medium">{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
+                              {selectedResource.url && (
+                                <a href={selectedResource.url} target="_blank" rel="noreferrer" className="mt-4 px-4 py-2 bg-blue-500/20 text-blue-400 rounded-full text-sm font-medium hover:bg-blue-500/30 transition-all border border-blue-500/30">
+                                  Apri Originale ↗
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                        <div className="modal-summary p-6 bg-gradient-to-br from-white/5 to-transparent border border-white/5 rounded-2xl flex-1">
+                          <h4 className="text-sm font-semibold text-blue-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                            <FileText size={16} /> Appunti / Transcript
+                          </h4>
+                          <div className="prose prose-invert prose-sm max-w-none prose-p:leading-relaxed prose-p:text-white/70">
+                            {/* Mockup for Timestamps if it's a video */}
+                            {selectedResource.type === 'video' && (
+                              <div className="mb-4 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl flex items-start gap-3">
+                                <PlayCircle size={18} className="text-blue-400 mt-0.5 shrink-0" />
+                                <p className="text-sm text-blue-200/80 m-0">
+                                  Clicca sui timestamp (es. <button onClick={() => setVideoTime(120)} className="text-blue-400 font-bold hover:underline">02:00</button>) per saltare a quella parte del video. I timestamp verranno generati dall'AI in futuro.
+                                </p>
+                              </div>
+                            )}
+                            <p>{selectedResource.summary || "Riassunto non disponibile. Questa risorsa potrebbe essere stata salvata prima dell'aggiornamento."}</p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    {activeTab === 'connections' && (
+                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center text-center h-64">
+                        <Network size={48} className="text-purple-500/50 mb-4" />
+                        <h4 className="text-lg font-bold text-white mb-2">Connessioni Neurali</h4>
+                        <p className="text-white/50 text-sm max-w-sm">Questa sezione mostrerà automaticamente altre risorse del tuo Vault collegate a questo argomento, in stile Recall.</p>
+                      </motion.div>
+                    )}
+
+                    {activeTab === 'graph' && (
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="p-6 bg-white/5 border border-white/10 rounded-2xl flex flex-col items-center justify-center text-center h-64">
+                        <BrainCircuit size={48} className="text-emerald-500/50 mb-4" />
+                        <h4 className="text-lg font-bold text-white mb-2">Mini Grafo di Conoscenza</h4>
+                        <p className="text-white/50 text-sm max-w-sm">Qui visualizzerai una mappa concettuale interattiva dei topics estratti da questa specifica risorsa.</p>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
                 </div>
               </div>
 
-              <div className="modal-right">
-                <div className="modal-chat-header border-b border-white/10 pb-4">
-                  <div className="glow-dot"></div>
-                  <h4 className="font-semibold tracking-wide">Focus Chat</h4>
+              <div className="modal-right flex flex-col h-full border-l border-white/5 pl-6">
+                <div className="modal-chat-header border-b border-white/10 pb-4 shrink-0">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.8)] animate-pulse"></div>
+                      <h4 className="font-semibold tracking-wide text-white">Focus Chat</h4>
+                    </div>
+                  </div>
+                  {/* CONTEXT TOGGLE */}
+                  <div className="flex items-center bg-black/40 border border-white/10 rounded-xl p-1">
+                    <button 
+                      onClick={() => setChatContext('resource')}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all ${chatContext === 'resource' ? 'bg-blue-600 text-white shadow-lg' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      Solo Risorsa
+                    </button>
+                    <button 
+                      onClick={() => setChatContext('internet')}
+                      className={`flex-1 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1 ${chatContext === 'internet' ? 'bg-indigo-600 text-white shadow-lg' : 'text-white/50 hover:text-white/80'}`}
+                    >
+                      <Globe size={12} /> Web + Risorsa
+                    </button>
+                  </div>
                 </div>
-                <div className="modal-chat-area">
+
+                <div className="modal-chat-area flex-1 overflow-y-auto hide-scrollbar py-4">
                   {chatMessages.length === 0 ? (
-                    <div className="empty-chat">Fai una domanda a Friday riguardo a questa specifica risorsa. Il contesto sarà focalizzato al 100% su questo documento.</div>
+                    <div className="empty-chat h-full flex flex-col items-center justify-center text-center px-4">
+                      <MessageSquare size={32} className="text-blue-500/30 mb-3" />
+                      <p className="text-white/40 text-sm">Fai una domanda a Friday riguardo a questa specifica risorsa.</p>
+                      <p className="text-blue-400/60 text-xs mt-2">Contesto attuale: {chatContext === 'resource' ? 'Solo questo documento' : 'Questo documento + Ricerca Web'}</p>
+                    </div>
                   ) : (
                     chatMessages.map((msg, i) => (
                       <div key={i} className="flex w-full mb-4" style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
@@ -405,7 +493,7 @@ export default function ResourceView() {
                           border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,122,255,0.2)',
                           color: msg.role === 'friday' ? '#e2e8f0' : '#ffffff',
                           fontSize: '0.9rem', lineHeight: 1.6,
-                          maxWidth: '85%',
+                          maxWidth: '90%',
                           boxShadow: msg.role === 'friday' ? '0 4px 20px rgba(0,122,255,0.05)' : '0 4px 20px rgba(0,0,0,0.2)',
                           backdropFilter: 'blur(10px)'
                         }}>
@@ -418,26 +506,27 @@ export default function ResourceView() {
                   {isChatting && (
                     <div className="flex w-full mb-4" style={{ justifyContent: 'flex-start' }}>
                       <div className="chat-msg relative flex items-center justify-center" style={{ padding: '12px 16px', borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(135deg, rgba(0,122,255,0.1), rgba(0,80,200,0.05))', border: '1px solid rgba(0,122,255,0.1)', color: '#5e9cff' }}>
-                        <Loader2 size={16} className="spinner" />
-                        <span className="ml-2 text-xs font-medium opacity-70">Analizzando...</span>
+                        <Loader2 size={16} className="spinner animate-spin" />
+                        <span className="ml-2 text-xs font-medium opacity-70">Analizzando ({chatContext})...</span>
                       </div>
                     </div>
                   )}
                 </div>
-                <div className="modal-chat-input relative mt-4">
+
+                <div className="modal-chat-input relative mt-2 shrink-0">
                   <input 
                     type="text" 
-                    placeholder="Chiedi dettagli su questa risorsa..." 
+                    placeholder={chatContext === 'resource' ? "Chiedi dettagli sulla risorsa..." : "Cerca online e nella risorsa..."}
                     value={chatInput}
                     onChange={e => setChatInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && handleSendChat()}
                     disabled={isChatting}
-                    className="w-full bg-[#1A1A1A] border border-white/10 rounded-full py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder-white/30"
+                    className="w-full bg-[#1A1A1A] border border-white/10 rounded-full py-3 pl-4 pr-12 text-sm text-white focus:outline-none focus:border-blue-500/50 transition-colors placeholder-white/30 shadow-inner"
                   />
                   <button 
                     onClick={handleSendChat} 
                     disabled={isChatting || !chatInput.trim()}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-white/10 text-white rounded-full transition-all"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:bg-white/10 text-white rounded-full transition-all shadow-lg"
                   >
                     <Send size={14}/>
                   </button>
