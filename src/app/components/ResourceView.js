@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize } from "lucide-react";
+import dynamic from 'next/dynamic';
+
+const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -23,6 +26,23 @@ export default function ResourceView({ isMobile }) {
   const [chatContext, setChatContext] = useState("resource"); // "resource", "internet"
   const [videoTime, setVideoTime] = useState(0);
   const [isFullscreenTranscript, setIsFullscreenTranscript] = useState(false);
+  const graphContainerRef = useRef(null);
+  const [graphDimensions, setGraphDimensions] = useState({ width: 500, height: 400 });
+
+  useEffect(() => {
+    if (activeTab === 'graph' && graphContainerRef.current) {
+      const resizeObserver = new ResizeObserver(entries => {
+        for (let entry of entries) {
+          setGraphDimensions({
+            width: entry.contentRect.width,
+            height: entry.contentRect.height
+          });
+        }
+      });
+      resizeObserver.observe(graphContainerRef.current);
+      return () => resizeObserver.disconnect();
+    }
+  }, [activeTab, isFullscreenTranscript]);
 
   const fetchResources = async () => {
     setLoadingList(true);
@@ -503,19 +523,52 @@ export default function ResourceView({ isMobile }) {
                     )}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'center', height: '100%', border: 'none', background: 'transparent'}}>
-                        <Share2 size={48} className="text-green-500/50 mb-4" />
-                        <h4 style={{color: '#fff', fontSize: '1.2rem'}}>Topologia (Mini Grafo)</h4>
-                        <p style={{color: 'rgba(255,255,255,0.5)', marginBottom: '24px', maxWidth: '100%'}}>I concetti chiave estratti da questa risorsa</p>
-                        <div style={{display: 'flex', flexWrap: 'wrap', gap: '12px', justifyContent: 'center', marginTop: '24px'}}>
-                          {(Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : []).map((t, idx) => (
-                            <div key={idx} style={{padding: '8px 16px', background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)', borderRadius: '20px', color: '#4ade80', fontSize: '0.85rem', whiteSpace: 'nowrap'}}>
-                              #{t}
-                            </div>
-                          ))}
-                          {!(Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : []).length && (
-                             <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic'}}>Nessun topic estratto.</p>
-                          )}
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 24px 0 24px'}}>
+                          <Share2 size={32} className="text-green-500" />
+                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Topologia Neurale</h4>
+                        </div>
+                        <p style={{color: 'rgba(255,255,255,0.6)', padding: '0 24px', marginBottom: '12px', maxWidth: '100%'}}>Esplora visivamente i concetti e le risorse collegate interagendo con il grafo.</p>
+                        <div ref={graphContainerRef} style={{flex: 1, width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)'}}>
+                          <ForceGraph2D
+                            width={graphDimensions.width}
+                            height={graphDimensions.height}
+                            graphData={(() => {
+                              if (!selectedResource) return { nodes: [], links: [] };
+                              const nodes = [{ id: selectedResource.id, name: selectedResource.title, val: 20, color: '#3b82f6' }];
+                              const links = [];
+                              const tags = Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : [];
+                              
+                              tags.forEach(tag => {
+                                const tagId = `tag_${tag}`;
+                                nodes.push({ id: tagId, name: `#${tag}`, val: 10, color: '#10b981' });
+                                links.push({ source: selectedResource.id, target: tagId });
+
+                                resources.forEach(r => {
+                                  if (r.id !== selectedResource.id) {
+                                    const rTags = Array.isArray(r.topics) ? r.topics : Array.isArray(r.tags) ? r.tags : [];
+                                    if (rTags.includes(tag)) {
+                                      if (!nodes.find(n => n.id === r.id)) {
+                                        nodes.push({ id: r.id, name: r.title.substring(0, 20) + '...', val: 5, color: '#8b5cf6' });
+                                      }
+                                      links.push({ source: tagId, target: r.id });
+                                    }
+                                  }
+                                });
+                              });
+                              return { nodes, links };
+                            })()}
+                            nodeLabel="name"
+                            nodeColor="color"
+                            nodeRelSize={6}
+                            linkColor={() => 'rgba(255,255,255,0.2)'}
+                            backgroundColor="transparent"
+                            onNodeClick={node => {
+                              if (node.id.startsWith('tag_')) return;
+                              const res = resources.find(r => r.id === node.id);
+                              if (res) setSelectedResource(res);
+                            }}
+                          />
                         </div>
                       </motion.div>
                     )}
