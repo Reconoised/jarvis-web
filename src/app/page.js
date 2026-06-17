@@ -71,70 +71,55 @@ export default function Dashboard() {
     }
   }
 
-  async function startWake() {
+  function startWake() {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { alert("Wake word non supportato su questo browser."); return; }
 
-    try {
-      // Apro uno stream persistente — l'icona del microfono resta fissa, non lampeggia
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      persistentStreamRef.current = stream;
+    // Ferma eventuale vecchia istanza
+    try { wakeRecRef.current?.stop(); } catch(e) {}
 
-      const WAKE_WORDS = [
-        "friday", "hey friday", "hey, friday", "a friday",
-      ];
+    const wake = new SR();
+    wake.continuous = true;
+    wake.interimResults = true;
+    wake.lang = "en-US";  // "Friday" è inglese
 
-      const wake = new SR();
-      wake.continuous = true;
-      wake.interimResults = true;
-      wake.lang = "en-US";  // INGLESE — "Friday" viene riconosciuto bene
-
-      wake.onresult = (event) => {
-        if (modeRef.current !== "idle") return;
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          const text = event.results[i][0].transcript.toLowerCase().trim();
-          setWakeHeard(text); // Debug: mostra cosa sente
-          if (WAKE_WORDS.some(w => text.includes(w))) {
-            try { wake.stop(); } catch(e) {}
-            setWakeStatus("detected");
-            setWakeHeard("");
-            startRec();
-            return;
-          }
+    wake.onresult = (event) => {
+      if (modeRef.current !== "idle") return;
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const text = event.results[i][0].transcript.toLowerCase().trim();
+        setWakeHeard(text);
+        if (text.includes("friday")) {
+          try { wake.stop(); } catch(e) {}
+          setWakeStatus("detected");
+          setWakeHeard("");
+          startRec();
+          return;
         }
-      };
+      }
+    };
 
-      wake.onerror = (e) => {
-        if (e.error === "aborted") return;
-      };
+    wake.onerror = () => {};
+    wake.onend = () => {
+      if (wakeEnabledRef.current && modeRef.current === "idle") {
+        setTimeout(() => {
+          try { wake.start(); setWakeStatus("listening"); } catch(e) {}
+        }, 500);
+      }
+    };
 
-      wake.onend = () => {
-        if (wakeEnabledRef.current && modeRef.current === "idle") {
-          setTimeout(() => {
-            try { wake.start(); setWakeStatus("listening"); } catch(e) {}
-          }, 300);
-        }
-      };
-
-      wakeRecRef.current = wake;
-      wake.start();
-      wakeEnabledRef.current = true;
-      setWakeEnabled(true);
-      setWakeStatus("listening");
-    } catch(err) {
-      alert("Errore microfono: " + err.message);
-    }
+    wakeRecRef.current = wake;
+    wake.start();
+    wakeEnabledRef.current = true;
+    setWakeEnabled(true);
+    setWakeStatus("listening");
   }
 
   function stopWake() {
     wakeEnabledRef.current = false;
     setWakeEnabled(false);
     setWakeStatus("off");
+    setWakeHeard("");
     try { wakeRecRef.current?.stop(); } catch(e) {}
-    if (persistentStreamRef.current) {
-      persistentStreamRef.current.getTracks().forEach(t => t.stop());
-      persistentStreamRef.current = null;
-    }
   }
 
   function restartWake() {
