@@ -343,7 +343,13 @@ export default function ResourceView() {
                   </div>
                 </div>
                 <div className="modal-media">
-                  {selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
+                  {selectedResource.type === 'video' && selectedResource.video_id ? (
+                    <iframe 
+                      src={`https://www.youtube.com/embed/${selectedResource.video_id}`} 
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                      allowFullScreen
+                    ></iframe>
+                  ) : selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
                     <iframe 
                       src={`https://www.youtube.com/embed/${selectedResource.id.split('YouTube_')[1].replace('.md', '')}`} 
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
@@ -352,7 +358,7 @@ export default function ResourceView() {
                   ) : (
                     <div className="web-preview-box">
                       <Globe size={40} className="web-icon" style={{ opacity: 0.5, marginBottom: 10 }}/>
-                      <p>Articolo Web Salvato</p>
+                      <p>{selectedResource.type === 'video' ? "Video Salvato" : "Articolo Web Salvato"}</p>
                       {selectedResource.url && <a href={selectedResource.url} target="_blank" rel="noreferrer" style={{color: 'var(--accent)', marginTop: 10, textDecoration: 'none'}}>Apri Originale ↗</a>}
                     </div>
                   )}
