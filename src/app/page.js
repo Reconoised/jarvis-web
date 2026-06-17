@@ -234,8 +234,19 @@ export default function Dashboard() {
       const res = await fetch(`${BACKEND_URL}/api/jarvis/voice`, { method: "POST", body: fd });
       const data = await res.json();
       if (data.response) {
-        setMessages(prev => [...prev, { role: "assistant", text: data.response }]);
-        speakNeural(data.response);
+        let text = data.response;
+        const match = text.match(/\[OPEN_RESOURCE:\s*(.*?)\]/);
+        if (match) {
+          const resourceId = match[1].trim();
+          text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
+          if (!text) text = "Apro subito la risorsa.";
+          setCurrentView("Risorse");
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
+          }, 600);
+        }
+        setMessages(prev => [...prev, { role: "assistant", text: text }]);
+        speakNeural(text);
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
         setMode("idle"); restartWake();
@@ -246,20 +257,31 @@ export default function Dashboard() {
     }
   }
 
-  async function sendText(text) {
-    if (!text.trim() || mode === "thinking") return;
-    setMessages(prev => [...prev, { role: "user", text }]);
+  async function sendText(text_input) {
+    if (!text_input.trim() || mode === "thinking") return;
+    setMessages(prev => [...prev, { role: "user", text: text_input }]);
     setMode("thinking");
     try {
       const res = await fetch(`${BACKEND_URL}/api/jarvis`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text_input })
       });
       const data = await res.json();
       if (data.response) {
-        setMessages(prev => [...prev, { role: "assistant", text: data.response }]);
-        speakNeural(data.response);
+        let text = data.response;
+        const match = text.match(/\[OPEN_RESOURCE:\s*(.*?)\]/);
+        if (match) {
+          const resourceId = match[1].trim();
+          text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
+          if (!text) text = "Apro subito la risorsa.";
+          setCurrentView("Risorse");
+          setTimeout(() => {
+            window.dispatchEvent(new CustomEvent('friday_open_resource', { detail: resourceId }));
+          }, 600);
+        }
+        setMessages(prev => [...prev, { role: "assistant", text: text }]);
+        speakNeural(text);
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
         setMode("idle"); restartWake();

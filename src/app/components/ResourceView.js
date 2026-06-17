@@ -27,6 +27,7 @@ export default function ResourceView({ isMobile }) {
   const [videoTime, setVideoTime] = useState(0);
   const [isFullscreenTranscript, setIsFullscreenTranscript] = useState(false);
   const graphContainerRef = useRef(null);
+  const fgRef = useRef();
   const [graphDimensions, setGraphDimensions] = useState({ width: 500, height: 400 });
 
   useEffect(() => {
@@ -43,6 +44,14 @@ export default function ResourceView({ isMobile }) {
       return () => resizeObserver.disconnect();
     }
   }, [activeTab, isFullscreenTranscript]);
+
+  useEffect(() => {
+    if (activeTab === 'graph' && fgRef.current) {
+      // Imposta le forze del grafo per renderlo più largo ed elegante stile Obsidian
+      fgRef.current.d3Force('charge').strength(-400);
+      fgRef.current.d3Force('link').distance(80);
+    }
+  }, [activeTab, selectedResource]);
 
   const fetchResources = async () => {
     setLoadingList(true);
@@ -61,6 +70,18 @@ export default function ResourceView({ isMobile }) {
   useEffect(() => {
     fetchResources();
   }, []);
+
+  useEffect(() => {
+    const handleOpenResource = (e) => {
+      const targetId = e.detail;
+      const targetResource = resources.find(r => r.id === targetId || r.id.includes(targetId) || (r.title && r.title.toLowerCase().includes(targetId.toLowerCase())));
+      if (targetResource) {
+        setSelectedResource(targetResource);
+      }
+    };
+    window.addEventListener('friday_open_resource', handleOpenResource);
+    return () => window.removeEventListener('friday_open_resource', handleOpenResource);
+  }, [resources]);
 
   const handleAssimilate = async () => {
     if (!url.trim()) return;
@@ -558,10 +579,35 @@ export default function ResourceView({ isMobile }) {
                               });
                               return { nodes, links };
                             })()}
-                            nodeLabel="name"
-                            nodeColor="color"
-                            nodeRelSize={6}
-                            linkColor={() => 'rgba(255,255,255,0.2)'}
+                            ref={fgRef}
+                            nodeLabel=""
+                            nodeCanvasObject={(node, ctx, globalScale) => {
+                              const label = node.name;
+                              const fontSize = Math.max(12/globalScale, 2);
+                              ctx.font = `${fontSize}px Sans-Serif`;
+                              
+                              const radius = node.val ? Math.sqrt(node.val) * 1.5 : 4;
+                              
+                              ctx.beginPath();
+                              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
+                              ctx.fillStyle = node.color || '#ffffff';
+                              ctx.fill();
+                              
+                              ctx.beginPath();
+                              ctx.arc(node.x, node.y, radius + 2, 0, 2 * Math.PI, false);
+                              ctx.strokeStyle = `${node.color || '#ffffff'}40`;
+                              ctx.lineWidth = 1;
+                              ctx.stroke();
+
+                              if (globalScale > 1 || node.val === 20) {
+                                ctx.textAlign = 'center';
+                                ctx.textBaseline = 'middle';
+                                ctx.fillStyle = node.val === 20 ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.6)';
+                                ctx.fillText(label, node.x, node.y + radius + fontSize);
+                              }
+                            }}
+                            linkColor={() => 'rgba(255,255,255,0.1)'}
+                            linkWidth={0.5}
                             backgroundColor="transparent"
                             onNodeClick={node => {
                               if (node.id.startsWith('tag_')) return;
