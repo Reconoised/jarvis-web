@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff } from "lucide-react";
-
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
 export default function Dashboard() {
@@ -322,6 +322,62 @@ export default function Dashboard() {
 
   const ft = (s) => `${Math.floor(s/60)}:${(s%60).toString().padStart(2,"0")}`;
 
+  const renderMessageContent = (text) => {
+    const chartMatch = text.match(/```json\s+chart\s*([\s\S]*?)```/);
+    if (chartMatch) {
+      try {
+        const chartData = JSON.parse(chartMatch[1]);
+        const beforeText = text.substring(0, chartMatch.index);
+        const afterText = text.substring(chartMatch.index + chartMatch[0].length);
+        
+        let ChartComponent = null;
+        const chartStyle = { width: "100%", height: 200, marginTop: 10, marginBottom: 10, background: "rgba(255,255,255,0.05)", borderRadius: 10, padding: 10, backdropFilter: "blur(10px)" };
+        
+        if (chartData.type === "pie") {
+          const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
+          ChartComponent = (
+            <div className="chart-container" style={chartStyle}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={chartData.data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={60} label>
+                    {chartData.data.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "rgba(0,0,0,0.8)", border: "none", borderRadius: 5, color: "#fff" }} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        } else if (chartData.type === "bar") {
+          ChartComponent = (
+             <div className="chart-container" style={chartStyle}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData.data}>
+                  <XAxis dataKey="name" stroke="#ffffff88" fontSize={12} />
+                  <YAxis stroke="#ffffff88" fontSize={12} />
+                  <Tooltip contentStyle={{ background: "rgba(0,0,0,0.8)", border: "none", borderRadius: 5, color: "#fff" }} cursor={{ fill: "rgba(255,255,255,0.1)" }} />
+                  <Bar dataKey="value" fill="#8884d8" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        }
+
+        return (
+          <>
+            {beforeText && <span style={{ whiteSpace: "pre-wrap" }}>{beforeText}</span>}
+            {ChartComponent}
+            {afterText && <span style={{ whiteSpace: "pre-wrap" }}>{afterText}</span>}
+          </>
+        );
+      } catch (e) {
+        return <span style={{ whiteSpace: "pre-wrap" }}>{text}</span>;
+      }
+    }
+    return <span style={{ whiteSpace: "pre-wrap" }}>{text}</span>;
+  };
+
   const STATUS = {
     idle: wakeEnabled ? "In ascolto..." : "Pronto",
     recording: `Ascoltando... ${ft(recordingTime)}`,
@@ -399,7 +455,7 @@ export default function Dashboard() {
                   className={`msg ${m.role}`}
                 >
                   <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
-                  {m.text}
+                  {renderMessageContent(m.text)}
                 </motion.div>
               ))}
             </AnimatePresence>
