@@ -734,13 +734,13 @@ export default function ResourceView({ isMobile }) {
                     )}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0, width: '100%'}}>
                         <div style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 24px 0 24px', flexShrink: 0}}>
                           <Share2 size={32} className="text-green-500" />
                           <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Topologia Neurale</h4>
                         </div>
                         <p style={{color: 'rgba(255,255,255,0.6)', padding: '0 24px', marginBottom: '12px', maxWidth: '100%', flexShrink: 0}}>Esplora visivamente i concetti e le risorse collegate interagendo con il grafo.</p>
-                        <div ref={graphContainerRef} style={{flex: 1, minHeight: '400px', width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)'}}>
+                        <div ref={graphContainerRef} style={{flex: 1, height: '100%', width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex'}}>
                           <ForceGraph2D
                             width={graphDimensions.width || 600}
                             height={graphDimensions.height || 400}
@@ -810,12 +810,12 @@ export default function ResourceView({ isMobile }) {
                     )}
 
                     {activeTab === 'raw' && (
-                      <motion.div key="raw" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent'}}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
+                      <motion.div key="raw" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: '24px 24px 0 24px'}}>
                           <FileText size={32} className="text-rose-500" />
                           <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Trascrizione Integrale</h4>
                         </div>
-                        <div className="prose markdown-body" style={{fontSize: '0.9rem', lineHeight: 1.8}}
+                        <div className="prose markdown-body" style={{fontSize: '0.9rem', lineHeight: 1.8, padding: '0 24px 24px 24px'}}
                           dangerouslySetInnerHTML={{ 
                             __html: selectedResource.content && selectedResource.content.includes('=== RAW_TRANSCRIPT ===')
                               ? selectedResource.content.split('=== RAW_TRANSCRIPT ===')[1].replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {

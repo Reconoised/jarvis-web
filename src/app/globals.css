@@ -617,7 +617,7 @@ html, body {
 .markdown-body h3 { font-size: 1.1rem; font-weight: 600; color: rgba(255,255,255,0.9); margin-top: 16px; margin-bottom: 8px; }
 .markdown-body br { display: block; content: ""; margin-top: 8px; }
 
-.chat-messages-scroll { flex: 1; overflow-y: auto; padding: 16px 0; }
+.chat-messages-scroll { flex: 1; overflow-y: auto; padding: 16px 0; display: flex; flex-direction: column; gap: 16px; }
 .chat-messages-scroll::-webkit-scrollbar { display: none; }
 .chat-input-wrapper {
   display: flex;
