@@ -2,11 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff } from "lucide-react";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
 export default function Dashboard() {
+  const [currentView, setCurrentView] = useState("OS"); // OS | Meditazione | Risorse | Manuali | Grafo | Diario | Progetti | Obiettivi
   const [mode, setMode] = useState("idle"); // idle | recording | thinking | speaking
   const [messages, setMessages] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -385,15 +386,41 @@ export default function Dashboard() {
     speaking: "Risposta in corso...",
   };
 
+  const navItems = [
+    { id: "OS", icon: <BrainCircuit size={22} />, label: "OS" },
+    { id: "Meditazione", icon: <Compass size={22} />, label: "Meditazione" },
+    { id: "Risorse", icon: <Book size={22} />, label: "Risorse" },
+    { id: "Manuali", icon: <BookOpen size={22} />, label: "Manuali" },
+    { id: "Grafo", icon: <GitGraph size={22} />, label: "Grafo" },
+    { id: "Diario", icon: <MessageSquare size={22} />, label: "Diario" },
+    { id: "Progetti", icon: <Briefcase size={22} />, label: "Progetti" },
+    { id: "Obiettivi", icon: <Target size={22} />, label: "Obiettivi" }
+  ];
+
   return (
-    <main className="dashboard">
-      <div className="top-bar">
-        <span className="brand">FRIDAY OS</span>
+    <div className="app-container">
+      <div className="sidebar">
+        {navItems.map(item => (
+          <div 
+            key={item.id} 
+            className={`nav-item ${currentView === item.id ? "active" : ""}`}
+            onClick={() => setCurrentView(item.id)}
+          >
+            <div className="nav-icon-box">{item.icon}</div>
+            <span>{item.label}</span>
+          </div>
+        ))}
       </div>
 
-      <div className="bento-grid">
+      <main className="dashboard">
+        <div className="top-bar">
+          <span className="brand">FRIDAY OS</span>
+        </div>
         
-        {/* WIDGET 1: Friday Orb */}
+        {currentView === "OS" ? (
+          <div className="bento-grid">
+            
+            {/* WIDGET 1: Friday Orb */}
         <motion.div className="bento-item orb-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}}>
           <h3 className="widget-title"><BrainCircuit size={16} /> Friday Core</h3>
           
@@ -477,8 +504,14 @@ export default function Dashboard() {
             </button>
           </div>
         </motion.div>
-
-      </div>
-    </main>
+          </div>
+        ) : (
+          <div className="placeholder-view">
+             <h1>🚧 Lavori in corso</h1>
+             <p>Il modulo <strong>{currentView}</strong> sarà disponibile a breve.</p>
+          </div>
+        )}
+      </main>
+    </div>
   );
 }
