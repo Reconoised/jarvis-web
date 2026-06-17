@@ -227,9 +227,48 @@ export default function ResourceView() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              {/* Modal Header */}
-              <div className="flex justify-between items-start mb-6">
-                <div>
+              {/* Absolute Close & Delete Buttons */}
+              <div className="absolute top-5 right-5 z-50 flex items-center space-x-2">
+                {isDeleting ? (
+                  <div className="flex items-center space-x-2 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 shadow-lg backdrop-blur-md">
+                    <span className="text-red-400 text-sm font-medium mr-1">Sicuro?</span>
+                    <button 
+                      onClick={() => handleDeleteConfirm(selectedResource.id)}
+                      className="px-3 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-full text-sm transition-all font-medium"
+                    >
+                      Sì
+                    </button>
+                    <button 
+                      onClick={() => setIsDeleting(false)}
+                      className="px-3 py-1 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white rounded-full text-sm transition-all"
+                    >
+                      No
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setIsDeleting(true)}
+                    className="flex items-center justify-center w-9 h-9 bg-white/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all"
+                    title="Elimina Risorsa"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+                
+                <button 
+                  onClick={() => {
+                    setSelectedResource(null);
+                    setIsDeleting(false);
+                  }}
+                  className="close-modal-btn"
+                  style={{ position: 'relative', top: 0, right: 0 }}
+                >
+                  <X size={20} />
+                </button>
+              </div>
+              
+              <div className="modal-left">
+                <div className="modal-header-info pr-20">
                   <h3 className="text-2xl font-bold text-white mb-2">{selectedResource.title}</h3>
                   <div className="flex items-center space-x-3 text-sm text-white/50">
                     <span className="flex items-center space-x-1">
@@ -238,45 +277,6 @@ export default function ResourceView() {
                     </span>
                   </div>
                 </div>
-                <div className="flex items-center space-x-2">
-                  {isDeleting ? (
-                    <div className="flex items-center space-x-2 bg-red-500/10 px-3 py-1.5 rounded-xl border border-red-500/20">
-                      <span className="text-red-400 text-sm font-medium mr-2">Eliminare?</span>
-                      <button 
-                        onClick={() => handleDeleteConfirm(selectedResource.id)}
-                        className="px-3 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-lg text-sm transition-all font-medium"
-                      >
-                        Sì
-                      </button>
-                      <button 
-                        onClick={() => setIsDeleting(false)}
-                        className="px-3 py-1 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white rounded-lg text-sm transition-all"
-                      >
-                        No
-                      </button>
-                    </div>
-                  ) : (
-                    <button 
-                      onClick={() => setIsDeleting(true)}
-                      className="p-2 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-xl transition-all"
-                      title="Elimina Risorsa"
-                    >
-                      <Trash2 size={24} />
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => {
-                      setSelectedResource(null);
-                      setIsDeleting(false);
-                    }}
-                    className="p-2 text-white/50 hover:text-white hover:bg-white/5 rounded-xl transition-all"
-                  >
-                    <X size={24} />
-                  </button>
-                </div>
-              </div>
-              
-              <div className="modal-left">
                 <div className="modal-media">
                   {selectedResource.type === 'video' && selectedResource.id.includes('YouTube_') ? (
                     <iframe 
