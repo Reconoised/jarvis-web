@@ -245,44 +245,62 @@ export default function ResourceView() {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
             >
-              {/* Absolute Close & Delete Buttons */}
-              <div className="absolute top-5 right-5 z-50 flex items-center space-x-2">
-                {isDeleting ? (
-                  <div className="flex items-center space-x-2 bg-red-500/10 px-3 py-1.5 rounded-full border border-red-500/20 shadow-lg backdrop-blur-md">
-                    <span className="text-red-400 text-sm font-medium mr-1">Sicuro?</span>
-                    <button 
-                      onClick={() => handleDeleteConfirm(selectedResource.id)}
-                      className="px-3 py-1 bg-red-500/20 text-red-400 hover:bg-red-500/40 rounded-full text-sm transition-all font-medium"
+              <div className="absolute top-5 right-5 z-50 flex items-center space-x-2" style={{ height: '40px' }}>
+                <AnimatePresence mode="wait">
+                  {isDeleting ? (
+                    <motion.div 
+                      key="delete-confirm"
+                      initial={{ width: 0, opacity: 0, scale: 0.8 }}
+                      animate={{ width: "auto", opacity: 1, scale: 1 }}
+                      exit={{ width: 0, opacity: 0, scale: 0.8 }}
+                      transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                      className="flex items-center space-x-2 bg-[#1A0505] px-4 py-2 rounded-full border border-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.15)] backdrop-blur-xl overflow-hidden"
                     >
-                      Sì
-                    </button>
-                    <button 
-                      onClick={() => setIsDeleting(false)}
-                      className="px-3 py-1 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white rounded-full text-sm transition-all"
+                      <span className="text-red-400 text-sm font-medium whitespace-nowrap mr-2 flex items-center">
+                        Eliminare definitivamente?
+                      </span>
+                      <button 
+                        onClick={() => handleDeleteConfirm(selectedResource.id)}
+                        className="flex items-center justify-center px-4 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full text-sm font-semibold transition-all shadow-[0_0_10px_rgba(239,68,68,0.3)] whitespace-nowrap"
+                      >
+                        Conferma
+                      </button>
+                      <button 
+                        onClick={() => setIsDeleting(false)}
+                        className="flex items-center justify-center px-4 py-1.5 bg-white/5 hover:bg-white/10 text-white/80 hover:text-white rounded-full text-sm font-medium transition-all whitespace-nowrap"
+                      >
+                        Annulla
+                      </button>
+                    </motion.div>
+                  ) : (
+                    <motion.button 
+                      key="delete-trigger"
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.8 }}
+                      whileHover={{ scale: 1.05, backgroundColor: "rgba(239,68,68,0.15)" }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setIsDeleting(true)}
+                      className="flex items-center justify-center w-10 h-10 bg-black/40 border border-white/5 text-red-400/80 hover:text-red-400 hover:border-red-500/30 rounded-full backdrop-blur-md transition-all"
+                      title="Elimina Risorsa"
                     >
-                      No
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setIsDeleting(true)}
-                    className="flex items-center justify-center w-9 h-9 bg-white/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-full transition-all"
-                    title="Elimina Risorsa"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                )}
+                      <Trash2 size={18} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
                 
-                <button 
+                <motion.button 
+                  whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.1)" }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setSelectedResource(null);
                     setIsDeleting(false);
                   }}
-                  className="close-modal-btn"
-                  style={{ position: 'relative', top: 0, right: 0 }}
+                  className="flex items-center justify-center w-10 h-10 bg-black/40 border border-white/5 text-white/70 hover:text-white rounded-full backdrop-blur-md transition-all"
+                  title="Chiudi (Esc)"
                 >
                   <X size={20} />
-                </button>
+                </motion.button>
               </div>
               
               <div className="modal-left">
