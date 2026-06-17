@@ -240,9 +240,11 @@ export default function Dashboard() {
           const resourceId = match[1].trim();
           text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
           
-          if (resourceId.startsWith("http://") || resourceId.startsWith("https://")) {
+          const isWebUrl = resourceId.startsWith("http://") || resourceId.startsWith("https://") || /^(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(resourceId);
+          if (isWebUrl) {
             if (!text) text = "Apro subito il sito.";
-            window.open(resourceId, '_blank');
+            const finalUrl = resourceId.startsWith("http") ? resourceId : "https://" + resourceId;
+            window.open(finalUrl, '_blank');
           } else {
             if (!text) text = "Apro subito la risorsa.";
             setCurrentView("Risorse");
@@ -281,9 +283,11 @@ export default function Dashboard() {
           const resourceId = match[1].trim();
           text = text.replace(/\[OPEN_RESOURCE:\s*.*?\]/, "").trim();
           
-          if (resourceId.startsWith("http://") || resourceId.startsWith("https://")) {
+          const isWebUrl = resourceId.startsWith("http://") || resourceId.startsWith("https://") || /^(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/.*)?$/.test(resourceId);
+          if (isWebUrl) {
             if (!text) text = "Apro subito il sito.";
-            window.open(resourceId, '_blank');
+            const finalUrl = resourceId.startsWith("http") ? resourceId : "https://" + resourceId;
+            window.open(finalUrl, '_blank');
           } else {
             if (!text) text = "Apro subito la risorsa.";
             setCurrentView("Risorse");
