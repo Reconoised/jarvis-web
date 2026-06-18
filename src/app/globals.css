@@ -218,10 +218,10 @@ html, body {
 
 .resource-container {
   display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
-  min-height: 100%; padding: 40px 20px; max-width: 800px; margin: 0 auto; width: 100%;
+  min-height: 100%; padding: 40px 20px; width: 100%;
 }
 
-.resource-header { text-align: center; margin-bottom: 40px; }
+.resource-header { text-align: center; margin-bottom: 40px; max-width: 800px; margin: 0 auto 40px auto; }
 .icon-glow-wrapper {
   display: inline-flex; padding: 20px; border-radius: 50%;
   background: rgba(255,255,255,0.05); margin-bottom: 20px;
@@ -231,7 +231,7 @@ html, body {
 .resource-header h2 { font-size: 2rem; font-weight: 300; letter-spacing: 1px; margin-bottom: 10px; }
 .resource-header p { color: var(--fg-dim); font-size: 0.95rem; line-height: 1.5; }
 
-.resource-input-wrapper { width: 100%; margin-bottom: 30px; }
+.resource-input-wrapper { width: 100%; max-width: 800px; margin: 0 auto 30px auto; }
 .resource-input-box {
   display: flex; align-items: center; gap: 10px;
   background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
