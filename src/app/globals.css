@@ -467,6 +467,20 @@ html, body {
 .focus-widget { grid-column: span 12; grid-row: span 4; }
 .inbox-widget { grid-column: span 12; grid-row: span 3; }
 
+@media (max-width: 767px) {
+  .bento-grid {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+  .bento-item {
+    flex-shrink: 0;
+  }
+  .orb-widget { min-height: 300px; }
+  .focus-widget { min-height: 350px; }
+  .inbox-widget { min-height: 500px; }
+}
+
 @media (min-width: 768px) {
   .orb-widget { grid-column: span 6; grid-row: span 12; }
   .focus-widget { grid-column: span 6; grid-row: span 6; }
@@ -493,6 +507,7 @@ html, body {
 
 /* Chat / Inbox */
 .chat { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.scroll-bottom-btn:hover { background: rgba(255,255,255,0.2) !important; }
 .msg { padding: 12px 16px; border-radius: 16px; max-width: 90%; font-size: 0.9rem; line-height: 1.5; }
 .msg.user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
 .msg.assistant { background: rgba(255,255,255,0.1); color: var(--fg); align-self: flex-start; border-bottom-left-radius: 4px; }

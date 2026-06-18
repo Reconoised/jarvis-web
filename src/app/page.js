@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase } from "lucide-react";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import MeditationView from "./components/MeditationView";
 import ResourceView from "./components/ResourceView";
@@ -23,6 +23,8 @@ export default function Dashboard() {
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const timerRef = useRef(null);
   const animFrameRef = useRef(null);
   const audioCtxRef = useRef(null);
@@ -31,6 +33,17 @@ export default function Dashboard() {
 
   const wakeStreamRef = useRef(null);
   const wakeEnabledRef = useRef(false);
+
+  const handleChatScroll = () => {
+    if (chatContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+      setShowScrollBtn(scrollHeight - scrollTop - clientHeight > 100);
+    }
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => { modeRef.current = mode; }, [mode]);
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
@@ -430,8 +443,9 @@ export default function Dashboard() {
     { id: "OS", icon: <BrainCircuit size={22} />, label: "OS" },
     { id: "Meditazione", icon: <Compass size={22} />, label: "Meditazione" },
     { id: "Risorse", icon: <Book size={22} />, label: "Risorse" },
-    { id: "Manuali", icon: <BookOpen size={22} />, label: "Manuali" },
+    { id: "Task", icon: <ListTodo size={22} />, label: "Task" },
     { id: "Grafo", icon: <GitGraph size={22} />, label: "Grafo" },
+    { id: "Calendario", icon: <Calendar size={22} />, label: "Calendario" },
     { id: "Diario", icon: <MessageSquare size={22} />, label: "Diario" },
     { id: "Progetti", icon: <Briefcase size={22} />, label: "Progetti" },
     { id: "Obiettivi", icon: <Target size={22} />, label: "Obiettivi" }
@@ -440,6 +454,9 @@ export default function Dashboard() {
   return (
     <div className="app-container">
       <div className="sidebar">
+        <div className="sidebar-logo" style={{ marginBottom: '10px', marginTop: '10px' }}>
+          <img src="/logo.png" alt="Friday OS" style={{ width: '48px', height: '48px', borderRadius: '14px', objectFit: 'cover', boxShadow: '0 0 15px rgba(0, 150, 255, 0.3)' }} />
+        </div>
         {navItems.map(item => (
           <div 
             key={item.id} 
@@ -454,7 +471,8 @@ export default function Dashboard() {
 
       <main className="dashboard">
         <div className="top-bar">
-          <span className="brand">FRIDAY OS</span>
+          {/* Logo rimosso per salvare spazio (ora è nella sidebar) */}
+          <span className="brand" style={{ display: 'none' }}>FRIDAY OS</span>
         </div>
         
         {currentView === "OS" ? (
@@ -509,7 +527,7 @@ export default function Dashboard() {
         <motion.div className="bento-item inbox-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}}>
           <h3 className="widget-title"><MessageSquare size={16} /> Brain Inbox</h3>
           
-          <div className="chat">
+          <div className="chat" ref={chatContainerRef} onScroll={handleChatScroll} style={{ position: 'relative' }}>
             {messages.length === 0 && (
               <div className="empty-state">Invia un pensiero veloce o chiedi qualcosa a Friday.</div>
             )}
@@ -527,6 +545,21 @@ export default function Dashboard() {
               ))}
             </AnimatePresence>
             <div ref={messagesEndRef} />
+            
+            {showScrollBtn && (
+              <button 
+                onClick={scrollToBottom}
+                className="scroll-bottom-btn"
+                style={{
+                  position: 'absolute', bottom: '20px', right: '20px', 
+                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '50%', padding: '10px', color: '#fff', cursor: 'pointer',
+                  backdropFilter: 'blur(10px)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+              >
+                <ChevronDown size={20} />
+              </button>
+            )}
           </div>
 
           <div className="input-bar">
