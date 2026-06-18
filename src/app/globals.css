@@ -90,8 +90,6 @@ html, body {
   flex-direction: column;
   height: 100vh;
   padding: max(env(safe-area-inset-top), 40px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
   flex-grow: 1;
   overflow-y: auto;
@@ -426,6 +424,8 @@ html, body {
   gap: 16px;
   height: 100%;
   width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
   flex-grow: 1;
   min-height: 0;
 }
