@@ -733,7 +733,7 @@ html, body {
 .task:hover {
   background: linear-gradient(145deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.03) 100%);
   border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px) scale(1.02);
+  transform: translateY(-2px);
   box-shadow: 0 12px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
   z-index: 10;
 }
