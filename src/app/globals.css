@@ -44,7 +44,7 @@ html, body {
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: max(env(safe-area-inset-top), 30px) 16px env(safe-area-inset-bottom, 20px) 16px;
+  padding: max(env(safe-area-inset-top), 16px) 16px env(safe-area-inset-bottom, 20px) 16px;
   gap: 8px;
   backdrop-filter: blur(40px);
   -webkit-backdrop-filter: blur(40px);
@@ -57,7 +57,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 12px;
   padding-left: 8px;
 }
 .sidebar-logo-text {
@@ -121,7 +121,7 @@ html, body {
   display: flex;
   flex-direction: column;
   height: 100vh;
-  padding: max(env(safe-area-inset-top), 40px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
+  padding: max(env(safe-area-inset-top), 16px) env(safe-area-inset-right, 20px) env(safe-area-inset-bottom, 20px) env(safe-area-inset-left, 20px);
   width: 100%;
   flex-grow: 1;
   overflow-y: auto;
@@ -943,8 +943,8 @@ html, body {
 .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* Orb Styles */
-.orb-container { position: relative; width: 220px; height: 220px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;}
-@media (min-width: 768px) { .orb-container { width: 300px; height: 300px; } }
+.orb-container { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;}
+@media (min-width: 768px) { .orb-container { width: 180px; height: 180px; } }
 .orb {
   width: 100%; height: 100%; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(0,180,255,0.85) 30%, rgba(0,30,80,0.95) 100%);
@@ -963,11 +963,11 @@ html, body {
 .orb.idle { animation: idleOrb 4s infinite alternate ease-in-out; }
 .orb.recording { 
   background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,50,80,0.85) 30%, rgba(60,0,10,0.95) 100%); 
-  box-shadow: 0 0 80px rgba(255,50,80,0.5), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5);
+  box-shadow: 0 0 80px rgba(255,50,80,0.6), inset 0 0 40px rgba(255,255,255,0.6), inset -20px -20px 40px rgba(0,0,0,0.6);
 }
 .orb.thinking { 
   background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,200,60,0.85) 30%, rgba(60,40,0,0.95) 100%); 
-  box-shadow: 0 0 60px rgba(255,200,60,0.4), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5); 
+  box-shadow: 0 0 60px rgba(255,200,60,0.5), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5); 
   animation: thinkOrb 1s infinite alternate ease-in-out; 
 }
 .orb.speaking { 
@@ -975,14 +975,14 @@ html, body {
   animation: speakOrb 0.5s infinite alternate ease-in-out; 
 }
 
-@keyframes idleOrb { 0% { transform: scale(0.98) translateY(2px); box-shadow: 0 0 40px rgba(0,180,255,0.3), inset 0 0 30px rgba(255,255,255,0.3), inset -20px -20px 40px rgba(0,0,0,0.5); } 100% { transform: scale(1.02) translateY(-2px); box-shadow: 0 0 70px rgba(0,180,255,0.6), inset 0 0 50px rgba(255,255,255,0.7), inset -20px -20px 40px rgba(0,0,0,0.5); } }
-@keyframes thinkOrb { 0% { transform: scale(1); filter: brightness(1); } 100% { transform: scale(1.05); filter: brightness(1.3); } }
-@keyframes speakOrb { 0% { transform: scale(1); box-shadow: 0 0 40px rgba(100,180,255,0.4), inset 0 0 30px rgba(255,255,255,0.5); } 100% { transform: scale(1.1); box-shadow: 0 0 100px rgba(100,200,255,0.8), inset 0 0 60px rgba(255,255,255,0.8); } }
-@keyframes pulseGlow { 0% { opacity: 0.3; transform: scale(0.9) rotate(0deg); } 100% { opacity: 1; transform: scale(1.1) rotate(10deg); } }
+@keyframes idleOrb { 0% { transform: scale(0.95) translateY(4px); box-shadow: 0 0 30px rgba(0,180,255,0.3), inset 0 0 30px rgba(255,255,255,0.3), inset -20px -20px 40px rgba(0,0,0,0.5); } 100% { transform: scale(1.05) translateY(-4px); box-shadow: 0 0 90px rgba(0,180,255,0.7), inset 0 0 50px rgba(255,255,255,0.7), inset -20px -20px 40px rgba(0,0,0,0.5); } }
+@keyframes thinkOrb { 0% { transform: scale(0.98); filter: brightness(1); } 100% { transform: scale(1.08); filter: brightness(1.4); } }
+@keyframes speakOrb { 0% { transform: scale(0.98); box-shadow: 0 0 50px rgba(100,180,255,0.5), inset 0 0 30px rgba(255,255,255,0.5); } 100% { transform: scale(1.15); box-shadow: 0 0 120px rgba(100,200,255,1), inset 0 0 80px rgba(255,255,255,0.9); } }
+@keyframes pulseGlow { 0% { opacity: 0.2; transform: scale(0.8) rotate(0deg); } 100% { opacity: 1; transform: scale(1.2) rotate(20deg); } }
 
-.orb-rings { position: absolute; inset: -30px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.1); pointer-events: none;}
-.orb-rings::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px dashed rgba(0,180,255,0.3); animation: spinRing 20s linear infinite; }
-.orb-rings::after { content: ''; position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.05); animation: spinRing 40s linear infinite reverse; }
+.orb-rings { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.1); pointer-events: none;}
+.orb-rings::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px dashed rgba(0,180,255,0.4); animation: spinRing 15s linear infinite; }
+.orb-rings::after { content: ''; position: absolute; inset: -60px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.08); animation: spinRing 25s linear infinite reverse; }
 
 /* Audio Visualizer */
 .audio-visualizer {
