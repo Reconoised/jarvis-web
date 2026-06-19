@@ -251,9 +251,15 @@ export default function ResourceView({ isMobile }) {
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
   const dictationRecRef = useRef(null);
   const dictationStreamRef = useRef(null);
+  const dictationAudioCtxRef = useRef(null);
+  const dictationAnimRef = useRef(null);
   const dictationTextRef = useRef("");
 
   const stopVoiceDictation = (shouldSend = false) => {
+    if (dictationAnimRef.current) {
+      cancelAnimationFrame(dictationAnimRef.current);
+      dictationAnimRef.current = null;
+    }
     if (dictationRecRef.current) {
       try { dictationRecRef.current.stop(); } catch(e) {}
       dictationRecRef.current = null;
@@ -261,6 +267,10 @@ export default function ResourceView({ isMobile }) {
     if (dictationStreamRef.current) {
       dictationStreamRef.current.getTracks().forEach(t => t.stop());
       dictationStreamRef.current = null;
+    }
+    if (dictationAudioCtxRef.current) {
+      try { dictationAudioCtxRef.current.close(); } catch(e) {}
+      dictationAudioCtxRef.current = null;
     }
     setIsRecordingDictation(false);
 
@@ -279,6 +289,21 @@ export default function ResourceView({ isMobile }) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       dictationStreamRef.current = stream;
+
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      dictationAudioCtxRef.current = ctx;
+      const source = ctx.createMediaStreamSource(stream);
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.8;
+      source.connect(analyser);
+
+      const buf = new Uint8Array(analyser.frequencyBinCount);
+      let silenceStart = 0;
+      let hasSpoken = false;
+      const MAX_RECORDING_MS = 60000;
+      const SILENCE_THRESHOLD_MS = 3000;
+      const recStart = Date.now();
 
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
@@ -324,7 +349,33 @@ export default function ResourceView({ isMobile }) {
         stopVoiceDictation(true);
       };
 
-      recognition.start();
+      try { recognition.start(); } catch(e) {}
+
+      function tick() {
+        analyser.getByteFrequencyData(buf);
+        const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
+        
+        const now = Date.now();
+        if (avg > 10) {
+            hasSpoken = true;
+            silenceStart = 0;
+        } else if (hasSpoken) {
+            if (silenceStart === 0) silenceStart = now;
+            else if (now - silenceStart > SILENCE_THRESHOLD_MS) {
+                stopVoiceDictation(true);
+                return;
+            }
+        }
+        
+        if (now - recStart > MAX_RECORDING_MS || (now - recStart > 8000 && !hasSpoken)) {
+            stopVoiceDictation(false);
+            return;
+        }
+
+        dictationAnimRef.current = requestAnimationFrame(tick);
+      }
+      tick();
+
     } catch (e) {
       console.error("Accesso microfono negato", e);
       alert("Permesso microfono negato.");
