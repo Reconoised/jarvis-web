@@ -218,18 +218,33 @@ export default function ResourceView({ isMobile }) {
   const [resourceChats, setResourceChats] = useState({});
   const [isChatting, setIsChatting] = useState(false);
 
+  useEffect(() => {
+    const savedChats = localStorage.getItem('friday_resource_chats');
+    if (savedChats) {
+      try {
+        setResourceChats(JSON.parse(savedChats));
+      } catch (e) {
+        console.error("Error parsing saved chats", e);
+      }
+    }
+  }, []);
+
+  const updateChatMessages = (resourceId, newMessages) => {
+    setResourceChats(prev => {
+      const nextState = {
+        ...prev,
+        [resourceId]: typeof newMessages === 'function' ? newMessages(prev[resourceId] || []) : newMessages
+      };
+      localStorage.setItem('friday_resource_chats', JSON.stringify(nextState));
+      return nextState;
+    });
+  };
+
   const chatMessages = selectedResource ? (resourceChats[selectedResource.id] || []) : [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
-
-  const updateChatMessages = (resourceId, newMessages) => {
-    setResourceChats(prev => ({
-      ...prev,
-      [resourceId]: typeof newMessages === 'function' ? newMessages(prev[resourceId] || []) : newMessages
-    }));
-  };
 
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
 
@@ -256,7 +271,9 @@ export default function ResourceView({ isMobile }) {
 
     recognition.onerror = (event) => {
       console.error("Errore riconoscimento vocale:", event.error);
-      if (event.error !== 'no-speech') {
+      if (event.error === 'network') {
+        alert("Errore di rete del microfono. Il tuo browser o la tua connessione sta bloccando i server di riconoscimento vocale. Prova a usare Chrome o controlla le impostazioni di sicurezza.");
+      } else if (event.error !== 'no-speech') {
         alert("Errore microfono: " + event.error);
       }
       setIsRecordingDictation(false);
@@ -654,11 +671,11 @@ export default function ResourceView({ isMobile }) {
                 <div className="modal-header-info pr-20 shrink-0">
                   <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{selectedResource.title}</h3>
                   <div className="flex items-center flex-wrap gap-2 text-sm">
-                    {selectedResource.tags && selectedResource.tags.length > 0 ? (
-                      selectedResource.tags.map(t => (
-                        <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)' }}>
+                    {selectedResource.tags && (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).length > 0 ? (
+                      (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).map(t => (
+                        <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}>
                           <Tag size={12} style={{ color: '#3b82f6' }} />
-                          {t}
+                          {t.trim()}
                         </span>
                       ))
                     ) : (
