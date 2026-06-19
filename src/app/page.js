@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen, Volume2, VolumeX, User, Play, Pause } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { get, set } from 'idb-keyval';
 import MeditationView from "./components/MeditationView";
 import ResourceView from "./components/ResourceView";
 import JournalView from "./components/JournalView";
@@ -98,6 +99,35 @@ export default function Dashboard() {
   const [showScrollBtn, setShowScrollBtn] = useState(false);
   const timerRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  useEffect(() => {
+    async function loadMessages() {
+      try {
+        const stored = await get('jarvis_messages');
+        if (stored && Array.isArray(stored)) {
+          const restored = stored.map(m => {
+            if (m.isAudio && m.blob) {
+              return { ...m, audioUrl: URL.createObjectURL(m.blob) };
+            }
+            return m;
+          });
+          setMessages(restored);
+        }
+      } catch (err) {
+        console.error("Failed to load messages from DB", err);
+      }
+    }
+    loadMessages();
+  }, []);
+
+  const hasLoadedRef = useRef(false);
+  useEffect(() => {
+    if (!hasLoadedRef.current) {
+      hasLoadedRef.current = true;
+      return;
+    }
+    set('jarvis_messages', messages).catch(console.error);
+  }, [messages]);
   const audioCtxRef = useRef(null);
   const modeRef = useRef("idle");
   const audioPlayerRef = useRef(null);
@@ -340,7 +370,7 @@ export default function Dashboard() {
     const audioUrl = URL.createObjectURL(blob);
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const msgId = Date.now();
-    setMessages(prev => [...prev, { id: msgId, role: "user", text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, transcript: localTranscript || undefined, timestamp }]);
+    setMessages(prev => [...prev, { id: msgId, role: "user", text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, blob, transcript: localTranscript || undefined, timestamp }]);
     try {
       const fd = new FormData();
       fd.append("audio", blob, "rec.webm");
