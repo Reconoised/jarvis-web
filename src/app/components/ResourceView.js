@@ -250,74 +250,65 @@ export default function ResourceView({ isMobile }) {
 
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
   const dictationRecRef = useRef(null);
+  const dictationStreamRef = useRef(null);
   const dictationTextRef = useRef("");
+  const dictationChunksRef = useRef([]);
 
   const stopVoiceDictation = (shouldSend = false) => {
-    if (dictationRecRef.current) {
-      try { dictationRecRef.current.stop(); } catch(e) {}
-      dictationRecRef.current = null;
+    if (dictationRecRef.current && dictationRecRef.current.state === "recording") {
+      // Passa shouldSend come parametro al recorder
+      dictationRecRef.current.shouldSend = shouldSend;
+      dictationRecRef.current.stop();
     }
     setIsRecordingDictation(false);
-
-    if (shouldSend && dictationTextRef.current) {
-      handleSendChat(dictationTextRef.current);
-      dictationTextRef.current = "";
-    }
-
-    if (wasWakeEnabledRef.current && window.fridayStartWake) {
-      window.fridayStartWake();
-      wasWakeEnabledRef.current = false;
-    }
   };
 
   const startVoiceDictation = async () => {
-    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
-      alert("Il tuo browser non supporta la dettatura vocale.");
-      return;
-    }
-
     try {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      const recognition = new SpeechRecognition();
-      dictationRecRef.current = recognition;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      dictationStreamRef.current = stream;
 
-      recognition.lang = 'it-IT';
-      recognition.continuous = true;
-      recognition.interimResults = true;
+      const rec = new MediaRecorder(stream);
+      dictationRecRef.current = rec;
+      dictationChunksRef.current = [];
 
-      let currentBaseInput = chatInput;
-      dictationTextRef.current = chatInput;
-
-      recognition.onstart = () => {
-        setIsRecordingDictation(true);
+      rec.ondataavailable = (e) => {
+        if (e.data.size > 0) dictationChunksRef.current.push(e.data);
       };
 
-      recognition.onresult = (event) => {
-        let finalTrans = "";
-        let interimTrans = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript + " ";
-          else interimTrans += event.results[i][0].transcript + " ";
+      rec.onstop = async () => {
+        const streamToClose = dictationStreamRef.current;
+        if (streamToClose) {
+          streamToClose.getTracks().forEach(t => t.stop());
+          dictationStreamRef.current = null;
         }
-        
-        if (finalTrans) {
-          currentBaseInput = (currentBaseInput + " " + finalTrans).trim();
+
+        const blob = new Blob(dictationChunksRef.current, { type: "audio/webm" });
+        if (blob.size > 500) {
+          try {
+            const fd = new FormData();
+            fd.append("audio", blob, "dictation.webm");
+            const res = await fetch(`${BACKEND_URL}/api/wake-check`, { method: "POST", body: fd });
+            const data = await res.json();
+            
+            if (data.transcript) {
+              const newText = data.transcript.trim();
+              const fullText = (chatInput + " " + newText).trim();
+              setChatInput(fullText);
+              
+              if (rec.shouldSend) {
+                handleSendChat(fullText);
+                setChatInput("");
+              }
+            }
+          } catch(e) {
+            console.error("Errore trascrizione audio:", e);
+          }
         }
-        
-        const fullText = (currentBaseInput + " " + interimTrans).trim();
-        dictationTextRef.current = fullText;
-        setChatInput(fullText);
       };
 
-      recognition.onerror = (event) => {
-        console.error("Errore riconoscimento vocale:", event.error);
-      };
-
-      recognition.onend = () => {
-        stopVoiceDictation(true);
-      };
-
-      try { recognition.start(); } catch(e) {}
+      rec.start();
+      setIsRecordingDictation(true);
 
     } catch (e) {
       console.error("Accesso microfono negato", e);
@@ -476,7 +467,7 @@ export default function ResourceView({ isMobile }) {
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, y: -10, height: 0 }}
               className={`status-message ${status}`}
-              style={{ marginTop: '12px', overflow: 'hidden', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}
+              style={{ marginTop: '12px', overflow: 'hidden', background: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}
             >
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 {status === "loading" && <Loader2 className="spinner" size={16} style={{ color: 'var(--accent)' }} />}
@@ -569,10 +560,10 @@ export default function ResourceView({ isMobile }) {
                 }}
                 style={{ 
                   cursor: 'pointer', background: 'rgba(255,255,255,0.03)', 
-                  border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px',
-                  padding: '20px', transition: 'all 0.3s ease',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)',
-                  display: 'flex', flexDirection: 'column', gap: '12px'
+                  border: '1px solid rgba(255,255,255,0.05)', padding: '16px', borderRadius: '16px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                  display: 'flex', flexDirection: 'column', zIndex: 10,
+                  transition: 'all 0.3s ease'
                 }}
                 onMouseEnter={(e) => {
                   e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
@@ -597,7 +588,7 @@ export default function ResourceView({ isMobile }) {
                 {res.tags && (Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
                     {(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).slice(0, 3).map(t => (
-                      <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t.trim()}</span>
+                      <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', whiteSpace: 'nowrap' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t.trim()}</span>
                     ))}
                     {(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length - 3}</span>}
                   </div>
@@ -631,10 +622,9 @@ export default function ResourceView({ isMobile }) {
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',
-                        background: 'rgba(26, 5, 5, 0.8)', padding: '6px 12px',
-                        borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.3)',
+                        background: 'rgba(26, 5, 5, 0.95)', padding: '6px 12px',
+                        borderRadius: '24px', border: '1px solid rgba(239, 68, 68, 0.5)',
                         boxShadow: '0 0 15px rgba(239, 68, 68, 0.15)',
-                        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
                         overflow: 'hidden'
                       }}
                     >
@@ -678,7 +668,7 @@ export default function ResourceView({ isMobile }) {
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         width: '40px', height: '40px', background: 'rgba(0, 0, 0, 0.4)',
                         border: '1px solid rgba(255, 255, 255, 0.05)', color: 'rgba(248, 113, 113, 0.8)',
-                        borderRadius: '50%', cursor: 'pointer', backdropFilter: 'blur(10px)'
+                        borderRadius: '50%', cursor: 'pointer'
                       }}
                       title="Elimina Risorsa"
                     >
@@ -698,7 +688,7 @@ export default function ResourceView({ isMobile }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     width: '40px', height: '40px', background: 'rgba(0, 0, 0, 0.4)',
                     border: '1px solid rgba(255, 255, 255, 0.05)', color: 'rgba(255, 255, 255, 0.7)',
-                    borderRadius: '50%', cursor: 'pointer', backdropFilter: 'blur(10px)'
+                    borderRadius: '50%', cursor: 'pointer'
                   }}
                   title="Chiudi (Esc)"
                 >
@@ -1059,9 +1049,8 @@ export default function ResourceView({ isMobile }) {
                           color: '#fff',
                           fontSize: '0.95rem', lineHeight: 1.6,
                           maxWidth: '85%',
-                          boxShadow: msg.role === 'user' ? '0 4px 15px rgba(0,0,0,0.2)' : '0 4px 15px rgba(0,150,255,0.1)',
-                          backdropFilter: 'blur(10px)',
-                          WebkitBackdropFilter: 'blur(10px)'
+                          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', zIndex: 20,
+                          borderTop: '1px solid rgba(255,255,255,0.05)'
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <span className="msg-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: msg.role === 'user' ? 'rgba(255,255,255,0.6)' : '#60a5fa' }}>
