@@ -537,14 +537,14 @@ html, body {
 }
 
 @media (min-width: 768px) {
-  .orb-widget { grid-column: span 6; grid-row: span 12; }
-  .focus-widget { grid-column: span 6; grid-row: span 6; }
-  .inbox-widget { grid-column: span 6; grid-row: span 6; }
+  .orb-widget { grid-column: span 12; grid-row: span 5; }
+  .focus-widget { grid-column: span 12; grid-row: span 5; }
+  .inbox-widget { grid-column: span 12; grid-row: span 8; }
 }
 @media (min-width: 1024px) {
-  .orb-widget { grid-column: span 4; grid-row: span 12; }
-  .focus-widget { grid-column: span 4; grid-row: span 12; }
-  .inbox-widget { grid-column: span 4; grid-row: span 12; }
+  .orb-widget { grid-column: span 4; grid-row: span 5; background: linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(0,100,255,0.05) 100%); }
+  .focus-widget { grid-column: span 4; grid-row: span 7; }
+  .inbox-widget { grid-column: span 8; grid-row: span 12; }
 }
 
 /* Tasks */
@@ -834,17 +834,6 @@ html, body {
   gap: 4px;
   height: 40px;
   margin-top: 15px;
-}
-.audio-bar {
-  width: 4px;
-  background: var(--accent);
-  border-radius: 4px;
-  animation: soundWave 0.5s infinite ease-in-out alternate;
-  box-shadow: 0 0 8px var(--accent);
-}
-@keyframes soundWave {
-  0% { height: 6px; opacity: 0.5; }
-  100% { height: 35px; opacity: 1; }
 }
 @keyframes spinRing { to { transform: rotate(360deg); } }
 

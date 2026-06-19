@@ -495,12 +495,14 @@ export default function Dashboard() {
               style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
             />
             {mode === "recording" && (
-              <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px' }}>
-                <div className="audio-bar" style={{ animationDelay: '0.1s' }} />
-                <div className="audio-bar" style={{ animationDelay: '0.3s', height: '35px' }} />
-                <div className="audio-bar" style={{ animationDelay: '0.2s', height: '25px' }} />
-                <div className="audio-bar" style={{ animationDelay: '0.4s', height: '30px' }} />
-                <div className="audio-bar" style={{ animationDelay: '0.1s', height: '20px' }} />
+              <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px', alignItems: 'flex-end', height: '50px' }}>
+                {[0.5, 0.8, 1.2, 0.9, 0.6].map((mult, idx) => (
+                  <div key={idx} style={{ 
+                    height: `${Math.max(6, 50 * audioLevel * mult)}px`,
+                    width: '5px', background: 'var(--accent)', borderRadius: '4px',
+                    boxShadow: '0 0 10px var(--accent)', transition: 'height 0.05s ease'
+                  }} />
+                ))}
               </div>
             )}
           </div>
