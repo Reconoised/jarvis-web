@@ -476,10 +476,6 @@ export default function Dashboard() {
       </div>
 
       <main className="dashboard">
-        <div className="top-bar">
-          {/* Logo rimosso per salvare spazio (ora è nella sidebar) */}
-          <span className="brand" style={{ display: 'none' }}>FRIDAY OS</span>
-        </div>
         
         {currentView === "OS" ? (
           <div className="os-layout">
