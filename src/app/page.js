@@ -492,6 +492,8 @@ export default function Dashboard() {
             {/* CENTER COLUMN: Friday Core + Brain Inbox */}
             <motion.div className="center-column" initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.1}}>
               
+              <div className="particles-bg" />
+
               {/* Friday Core Header */}
               <div className="core-header">
                 <div className="core-controls">
@@ -515,6 +517,7 @@ export default function Dashboard() {
 
                 <div className="orb-container">
                   <div className="orb-rings" />
+                  <div className="orb-core-geo" />
                   <div 
                     className={`orb ${mode}`} 
                     onClick={handleOrbClick}

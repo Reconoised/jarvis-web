@@ -708,39 +708,51 @@ html, body {
 /* Chat / Inbox */
 .chat { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; padding-right: 5px; }
 .scroll-bottom-btn:hover { background: rgba(255,255,255,0.2) !important; }
-.msg { padding: 14px 18px; border-radius: 20px; max-width: 85%; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.msg { padding: 14px 20px; border-radius: 20px; max-width: 85%; font-size: 0.95rem; line-height: 1.6; position: relative; }
 .msg.user {
-  background: linear-gradient(135deg, #007aff, #004fb0);
+  background: linear-gradient(135deg, #0062ff 0%, #0036a3 100%);
   color: white; align-self: flex-end; border-bottom-right-radius: 4px;
+  box-shadow: 0 10px 25px rgba(0, 98, 255, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
 }
 .msg.assistant {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(30, 40, 60, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  color: var(--fg); align-self: flex-start; border-bottom-left-radius: 4px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.95); align-self: flex-start; border-bottom-left-radius: 4px;
 }
 .msg-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; font-weight: 600; }
 
 /* Input Bar */
 .input-bar {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  background: rgba(0,0,0,0.5);
+  background: rgba(15, 20, 25, 0.6);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 24px; padding: 10px 10px 10px 20px;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  border-radius: 30px; padding: 12px 16px 12px 24px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .input-bar:focus-within {
-  border-color: rgba(0, 122, 255, 0.6);
-  box-shadow: 0 4px 25px rgba(0, 122, 255, 0.2);
+  border-color: rgba(0, 180, 255, 0.6);
+  box-shadow: 0 10px 50px rgba(0, 180, 255, 0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+  transform: translateY(-2px);
 }
-.text-input { flex-grow: 1; background: transparent; border: none; color: var(--fg); font-size: 1rem; outline: none; }
-.text-input::placeholder { color: var(--fg-muted); }
-.send-btn { background: var(--accent); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
-.send-btn:hover { background: #3b82f6; transform: scale(1.05); }
-.icon-btn { background: none; border: none; color: var(--fg-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: 0.2s; }
-.icon-btn:hover { color: var(--fg); background: rgba(255,255,255,0.1); }
+.text-input { flex-grow: 1; background: transparent; border: none; color: #fff; font-size: 1.05rem; outline: none; }
+.text-input::placeholder { color: rgba(255,255,255,0.4); }
+.send-btn { 
+  background: linear-gradient(135deg, #00a2ff 0%, #0062ff 100%); 
+  color: white; border: none; border-radius: 50%; width: 40px; height: 40px; 
+  display: flex; align-items: center; justify-content: center; 
+  cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+  box-shadow: 0 4px 15px rgba(0, 162, 255, 0.5);
+}
+.send-btn:hover { transform: scale(1.1) rotate(-10deg); box-shadow: 0 6px 20px rgba(0, 162, 255, 0.8); }
+.send-btn:active { transform: scale(0.95); }
+.icon-btn { background: none; border: none; color: var(--fg-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: 0.2s; }
+.icon-btn:hover { color: #fff; background: rgba(255,255,255,0.1); }
 .chat-loading { display: flex; align-items: center; justify-content: flex-start; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: auto; }
 .chat-loading span { font-size: 0.8rem; color: var(--fg-muted); margin-left: 10px; }
 
@@ -983,6 +995,42 @@ html, body {
 .orb-rings { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.1); pointer-events: none;}
 .orb-rings::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px dashed rgba(0,180,255,0.4); animation: spinRing 15s linear infinite; }
 .orb-rings::after { content: ''; position: absolute; inset: -60px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.08); animation: spinRing 25s linear infinite reverse; }
+
+/* Layer Geometrico per l'Orb */
+.orb-core-geo {
+  position: absolute;
+  inset: 15%;
+  border: 2px solid rgba(0,255,255,0.3);
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  animation: spinRing 10s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  mix-blend-mode: screen;
+}
+.orb-core-geo::after {
+  content: ''; position: absolute; inset: -20%;
+  border: 1px solid rgba(0,180,255,0.5);
+  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
+  animation: spinRing 5s linear infinite reverse;
+}
+
+/* Sfondo Animato Puntini (Particles) */
+.particles-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(0,180,255,0.15) 1.5px, transparent 1.5px);
+  background-size: 30px 30px;
+  animation: bgMove 40s linear infinite;
+  opacity: 0.6;
+  z-index: 0;
+  mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+  -webkit-mask-image: linear-gradient(to bottom, black 0%, transparent 60%);
+}
+@keyframes bgMove {
+  0% { background-position: 0 0; }
+  100% { background-position: 150px 150px; }
+}
 
 /* Audio Visualizer */
 .audio-visualizer {
