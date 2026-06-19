@@ -719,7 +719,7 @@ export default function ResourceView({ isMobile }) {
                   <div className="flex items-center flex-wrap gap-2 text-sm">
                     {selectedResource.tags && (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).length > 0 ? (
                       (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).map(t => (
-                        <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap', marginRight: '12px', marginBottom: '8px' }}>
+                        <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', whiteSpace: 'nowrap', marginRight: '12px', marginBottom: '8px' }}>
                           <Tag size={12} style={{ color: '#3b82f6' }} />
                           {t.trim()}
                         </span>
