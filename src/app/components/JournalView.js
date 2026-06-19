@@ -19,11 +19,24 @@ export default function JournalView() {
         if (data.days && data.days.length > 0) {
           setDays(data.days);
           setSelectedDate(data.days[0].date);
+        } else {
+          // Fallback if empty
+          const fallbackDays = [
+            { date: "2026-06-19", label: "Oggi", mood: "great", summary: "Dati non caricati. Riprova più tardi.", reflections: [], tasks: [], projects: [], tip: "Attendi il riavvio del server.", chat: [] }
+          ];
+          setDays(fallbackDays);
+          setSelectedDate("2026-06-19");
         }
         setLoading(false);
       })
       .catch(err => {
         console.error("Errore fetch journal:", err);
+        // Fallback on error
+        const fallbackDays = [
+          { date: "2026-06-19", label: "Oggi (Offline)", mood: "meh", summary: "Impossibile connettersi al server per scaricare i file dal Vault.", reflections: [], tasks: [], projects: [], tip: "Controlla la connessione o attendi il deploy.", chat: [] }
+        ];
+        setDays(fallbackDays);
+        setSelectedDate("2026-06-19");
         setLoading(false);
       });
   }, []);
