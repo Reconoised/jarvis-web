@@ -108,13 +108,27 @@ export default function Dashboard() {
   const activeFocusTasks = tasks.filter(t => !t.isDone);
 
   useEffect(() => {
-    if (!isFocusOpen || activeFocusTasks.length <= 1 || isFocusHovered) return;
+    if (!isFocusOpen || activeFocusTasks.length === 0 || isFocusHovered) return;
+    const scrollElem = focusScrollRef.current;
+    if (!scrollElem) return;
+    let animationFrameId;
+    let scrollPos = scrollElem.scrollTop;
     
-    const interval = setInterval(() => {
-      setFocusIndex(prev => (prev + 1) % activeFocusTasks.length);
-    }, 6000); // Cambia card ogni 6 secondi
+    const scroll = () => {
+      if (!scrollElem) return;
+      scrollPos += 0.3; // Velocità dello scroll
+      if (scrollPos >= scrollElem.scrollHeight - scrollElem.clientHeight) {
+        scrollPos = 0; // Torna all'inizio in loop
+      }
+      scrollElem.scrollTop = scrollPos;
+      animationFrameId = requestAnimationFrame(scroll);
+    };
     
-    return () => clearInterval(interval);
+    if (scrollElem.scrollHeight > scrollElem.clientHeight) {
+       animationFrameId = requestAnimationFrame(scroll);
+    }
+    
+    return () => cancelAnimationFrame(animationFrameId);
   }, [isFocusOpen, activeFocusTasks.length, isFocusHovered]);
 
   useEffect(() => {
@@ -822,25 +836,18 @@ export default function Dashboard() {
                   ) : (
                     <div 
                       className="task-list micro" 
+                      ref={focusScrollRef} 
                       onMouseEnter={() => setIsFocusHovered(true)} 
                       onMouseLeave={() => setIsFocusHovered(false)}
-                      style={{ padding: '0', position: 'relative', overflow: 'hidden', flexGrow: 1, minHeight: '150px' }}
+                      style={{ padding: '20px 10px', margin: '-20px -10px', scrollBehavior: 'auto' }}
                     >
-                      <AnimatePresence mode="wait">
-                        <motion.div 
-                          key={focusIndex}
-                          initial={{ opacity: 0, y: 15 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -15 }}
-                          transition={{ duration: 0.8, ease: "easeInOut" }}
-                          className="task micro-task"
-                          style={{ cursor: 'default', width: '100%', position: 'absolute', top: '10px', left: 0 }}
-                        >
+                      {activeFocusTasks.map((t, i) => (
+                        <div key={i} className="task micro-task" style={{ cursor: 'default' }}>
                           <div style={{ width: '100%', wordWrap: 'break-word', overflow: 'hidden' }}>
-                            <ReactMarkdown className="markdown-content">{activeFocusTasks[focusIndex]?.text || ""}</ReactMarkdown>
+                            <ReactMarkdown className="markdown-content">{t.text}</ReactMarkdown>
                           </div>
-                        </motion.div>
-                      </AnimatePresence>
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>
