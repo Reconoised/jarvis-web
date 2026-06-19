@@ -250,33 +250,12 @@ export default function ResourceView({ isMobile }) {
 
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
   const dictationRecRef = useRef(null);
-  const dictationStreamRef = useRef(null);
-  const dictationAudioCtxRef = useRef(null);
-  const dictationAnimRef = useRef(null);
-  const dummyRecRef = useRef(null);
   const dictationTextRef = useRef("");
-  const wasWakeEnabledRef = useRef(false);
 
   const stopVoiceDictation = (shouldSend = false) => {
-    if (dictationAnimRef.current) {
-      cancelAnimationFrame(dictationAnimRef.current);
-      dictationAnimRef.current = null;
-    }
-    if (dummyRecRef.current) {
-      try { dummyRecRef.current.stop(); } catch(e) {}
-      dummyRecRef.current = null;
-    }
     if (dictationRecRef.current) {
       try { dictationRecRef.current.stop(); } catch(e) {}
       dictationRecRef.current = null;
-    }
-    if (dictationStreamRef.current) {
-      dictationStreamRef.current.getTracks().forEach(t => t.stop());
-      dictationStreamRef.current = null;
-    }
-    if (dictationAudioCtxRef.current) {
-      try { dictationAudioCtxRef.current.close(); } catch(e) {}
-      dictationAudioCtxRef.current = null;
     }
     setIsRecordingDictation(false);
 
@@ -297,31 +276,7 @@ export default function ResourceView({ isMobile }) {
       return;
     }
 
-    if (window.fridayIsWakeEnabled && window.fridayIsWakeEnabled()) {
-      wasWakeEnabledRef.current = true;
-      if (window.fridayStopWake) window.fridayStopWake();
-      await new Promise(r => setTimeout(r, 200)); // Attendiamo il rilascio dell'hardware
-    }
-
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      dictationStreamRef.current = stream;
-
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      dictationAudioCtxRef.current = ctx;
-      const source = ctx.createMediaStreamSource(stream);
-      const analyser = ctx.createAnalyser();
-      analyser.fftSize = 256;
-      analyser.smoothingTimeConstant = 0.8;
-      source.connect(analyser);
-
-      const buf = new Uint8Array(analyser.frequencyBinCount);
-      let silenceStart = 0;
-      let hasSpoken = false;
-      const MAX_RECORDING_MS = 60000;
-      const SILENCE_THRESHOLD_MS = 3000;
-      const recStart = Date.now();
-
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
       dictationRecRef.current = recognition;
@@ -356,10 +311,6 @@ export default function ResourceView({ isMobile }) {
 
       recognition.onerror = (event) => {
         console.error("Errore riconoscimento vocale:", event.error);
-        stopVoiceDictation(false);
-        if (event.error === 'network') {
-          alert("Errore di rete del microfono. Prova a ricaricare o controllare i permessi.");
-        }
       };
 
       recognition.onend = () => {
@@ -368,40 +319,8 @@ export default function ResourceView({ isMobile }) {
 
       try { recognition.start(); } catch(e) {}
 
-      function tick() {
-        analyser.getByteFrequencyData(buf);
-        const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
-        
-        const now = Date.now();
-        if (avg > 10) {
-            hasSpoken = true;
-            silenceStart = 0;
-        } else if (hasSpoken) {
-            if (silenceStart === 0) silenceStart = now;
-            else if (now - silenceStart > SILENCE_THRESHOLD_MS) {
-                stopVoiceDictation(true);
-                return;
-            }
-        }
-        
-        if (now - recStart > MAX_RECORDING_MS || (now - recStart > 8000 && !hasSpoken)) {
-            stopVoiceDictation(false);
-            return;
-        }
-
-        dictationAnimRef.current = requestAnimationFrame(tick);
-      }
-      tick();
-
-      // IMPORTANT: Safari requires the stream to be actively recorded by a MediaRecorder 
-      // otherwise it suspends the microphone and throws a 'network' error in SpeechRecognition
-      const dummyRec = new MediaRecorder(stream);
-      dummyRecRef.current = dummyRec;
-      dummyRec.start();
-
     } catch (e) {
       console.error("Accesso microfono negato", e);
-      alert("Permesso microfono negato.");
     }
   };
 
