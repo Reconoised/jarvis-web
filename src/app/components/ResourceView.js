@@ -29,7 +29,12 @@ export default function ResourceView({ isMobile }) {
   const [isFullscreenTranscript, setIsFullscreenTranscript] = useState(false);
   const graphContainerRef = useRef(null);
   const fgRef = useRef();
+  const messagesEndRef = useRef(null);
   const [graphDimensions, setGraphDimensions] = useState({ width: 500, height: 400 });
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   useEffect(() => {
     if (activeTab === 'graph' && graphContainerRef.current) {
@@ -214,8 +219,17 @@ export default function ResourceView({ isMobile }) {
   });
 
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState([]);
+  const [resourceChats, setResourceChats] = useState({});
   const [isChatting, setIsChatting] = useState(false);
+
+  const chatMessages = selectedResource ? (resourceChats[selectedResource.id] || []) : [];
+
+  const updateChatMessages = (resourceId, newMessages) => {
+    setResourceChats(prev => ({
+      ...prev,
+      [resourceId]: typeof newMessages === 'function' ? newMessages(prev[resourceId] || []) : newMessages
+    }));
+  };
 
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
 
@@ -242,6 +256,9 @@ export default function ResourceView({ isMobile }) {
 
     recognition.onerror = (event) => {
       console.error("Errore riconoscimento vocale:", event.error);
+      if (event.error !== 'no-speech') {
+        alert("Errore microfono: " + event.error);
+      }
       setIsRecordingDictation(false);
     };
 
@@ -255,7 +272,7 @@ export default function ResourceView({ isMobile }) {
   const handleSendChat = async () => {
     if (!chatInput.trim() || !selectedResource) return;
     const userMsg = chatInput.trim();
-    setChatMessages(prev => [...prev, { role: "user", text: userMsg }]);
+    updateChatMessages(selectedResource.id, prev => [...prev, { role: "user", text: userMsg }]);
     setChatInput("");
     setIsChatting(true);
 
@@ -268,12 +285,12 @@ export default function ResourceView({ isMobile }) {
       const data = await res.json();
       
       if (res.ok && data.response) {
-        setChatMessages(prev => [...prev, { role: "friday", text: data.response }]);
+        updateChatMessages(selectedResource.id, prev => [...prev, { role: "friday", text: data.response }]);
       } else {
-        setChatMessages(prev => [...prev, { role: "friday", text: "Si è verificato un errore." }]);
+        updateChatMessages(selectedResource.id, prev => [...prev, { role: "friday", text: "Si è verificato un errore." }]);
       }
-    } catch (e) {
-      setChatMessages(prev => [...prev, { role: "friday", text: "Errore di rete." }]);
+    } catch (err) {
+      updateChatMessages(selectedResource.id, prev => [...prev, { role: "friday", text: "Errore di rete." }]);
     }
     setIsChatting(false);
   };
@@ -297,7 +314,6 @@ export default function ResourceView({ isMobile }) {
 
   const handleCloseModal = () => {
     setSelectedResource(null);
-    setChatMessages([]);
     setIsDeleting(false);
   };
 
@@ -493,7 +509,6 @@ export default function ResourceView({ isMobile }) {
                 transition={{ delay: idx * 0.05 }}
                 onClick={() => {
                   setSelectedResource(res);
-                  setChatMessages([]);
                   setChatInput("");
                 }}
                 style={{ 
@@ -524,9 +539,9 @@ export default function ResourceView({ isMobile }) {
                 </div>
                 {res.summary && <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{res.summary}</p>}
                 {res.tags && res.tags.length > 0 && (
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
                     {res.tags.slice(0, 3).map(t => (
-                      <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t}</span>
+                      <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t}</span>
                     ))}
                     {res.tags.length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{res.tags.length - 3}</span>}
                   </div>
@@ -957,7 +972,7 @@ export default function ResourceView({ isMobile }) {
                 </div>
               </div>
 
-              <div className="modal-right">
+              <div className="modal-right" style={{ flex: '1', display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden', padding: '30px' }}>
                 <div className="modal-chat-header border-b border-white/10 pb-4 shrink-0">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -967,7 +982,7 @@ export default function ResourceView({ isMobile }) {
                   </div>
                 </div>
 
-                <div className="chat-messages-scroll">
+                <div className="chat-messages-scroll" style={{ minHeight: 0, flex: 1, overflowY: 'auto' }}>
                   {chatMessages.length === 0 ? (
                     <div className="empty-chat h-full flex flex-col items-center justify-center text-center px-4">
                       <MessageSquare size={32} className="text-blue-500/30 mb-3" />
@@ -1012,6 +1027,7 @@ export default function ResourceView({ isMobile }) {
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="chat-controls-container" style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
@@ -1035,6 +1051,7 @@ export default function ResourceView({ isMobile }) {
                       disabled={isChatting}
                     />
                     <button 
+                      type="button"
                       onClick={isRecordingDictation ? () => {} : startVoiceDictation} 
                       title="Dettatura Vocale"
                       style={{ background: isRecordingDictation ? 'rgba(239,68,68,0.2)' : 'transparent', color: isRecordingDictation ? '#ef4444' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
@@ -1042,6 +1059,7 @@ export default function ResourceView({ isMobile }) {
                       <Mic size={16} className={isRecordingDictation ? "animate-pulse" : ""} />
                     </button>
                     <button 
+                      type="button"
                       onClick={handleSendChat} 
                       disabled={isChatting || !chatInput.trim()}
                       style={{ marginLeft: '4px' }}
