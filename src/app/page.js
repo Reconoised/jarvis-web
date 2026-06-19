@@ -455,8 +455,12 @@ export default function Dashboard() {
   return (
     <div className="app-container">
       <div className="sidebar">
-        <div className="sidebar-logo" style={{ marginBottom: '10px', marginTop: '10px' }}>
-          <img src="/logo.png" alt="Friday OS" style={{ width: '48px', height: '48px', borderRadius: '14px', objectFit: 'cover', boxShadow: '0 0 15px rgba(0, 150, 255, 0.3)' }} />
+        <div className="sidebar-logo-container">
+          <img src="/logo.png" alt="Friday OS" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 0 15px rgba(0, 150, 255, 0.3)' }} />
+          <div className="sidebar-logo-text">
+            FRIDAY
+            <span>Workspace</span>
+          </div>
         </div>
         {navItems.map(item => (
           <div 
