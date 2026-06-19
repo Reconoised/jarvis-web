@@ -33,10 +33,6 @@ export default function ResourceView({ isMobile }) {
   const [graphDimensions, setGraphDimensions] = useState({ width: 500, height: 400 });
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
-
-  useEffect(() => {
     if (activeTab === 'graph' && graphContainerRef.current) {
       const resizeObserver = new ResizeObserver(entries => {
         for (let entry of entries) {
@@ -223,6 +219,10 @@ export default function ResourceView({ isMobile }) {
   const [isChatting, setIsChatting] = useState(false);
 
   const chatMessages = selectedResource ? (resourceChats[selectedResource.id] || []) : [];
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [chatMessages]);
 
   const updateChatMessages = (resourceId, newMessages) => {
     setResourceChats(prev => ({
@@ -538,12 +538,12 @@ export default function ResourceView({ isMobile }) {
                   <h4 title={res.title} style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.title}</h4>
                 </div>
                 {res.summary && <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{res.summary}</p>}
-                {res.tags && res.tags.length > 0 && (
+                {res.tags && (Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
-                    {res.tags.slice(0, 3).map(t => (
-                      <span key={t} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t}</span>
+                    {(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).slice(0, 3).map(t => (
+                      <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t.trim()}</span>
                     ))}
-                    {res.tags.length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{res.tags.length - 3}</span>}
+                    {(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).length - 3}</span>}
                   </div>
                 )}
               </motion.div>
