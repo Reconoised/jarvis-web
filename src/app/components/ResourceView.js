@@ -267,25 +267,55 @@ export default function ResourceView({ isMobile }) {
   };
 
   return (
-    <div className="resource-container">
-      <div className="resource-header">
-        <div className="icon-glow-wrapper">
-          <BookOpen size={48} className="resource-icon" />
-        </div>
-        <h2>Recall Memory</h2>
-        <p>Incolla un link YouTube o un sito web. Friday estrarrà i concetti chiave e li salverà nel tuo Secondo Cervello.</p>
+    <div className="resource-container" style={{ position: 'relative', height: '100%' }}>
+      <style>{`
+        @keyframes float {
+          0% { transform: translateY(0) translateX(0); opacity: 0; }
+          50% { opacity: 0.5; }
+          100% { transform: translateY(-100px) translateX(20px); opacity: 0; }
+        }
+      `}</style>
+      
+      {/* Zen Particles Background */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 0, overflow: 'hidden' }}>
+        {[...Array(20)].map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            width: `${Math.random() * 4 + 2}px`,
+            height: `${Math.random() * 4 + 2}px`,
+            background: 'var(--accent)',
+            borderRadius: '50%',
+            opacity: 0,
+            animation: `float ${Math.random() * 10 + 5}s linear infinite`,
+            animationDelay: `${Math.random() * 5}s`
+          }} />
+        ))}
       </div>
 
-      <div className="resource-input-wrapper">
-        <div className="resource-input-box" style={{ display: 'flex', alignItems: 'center' }}>
-          <Link2 className="input-icon" size={20} />
+      <div className="resource-header" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="icon-glow-wrapper" style={{ boxShadow: '0 0 40px rgba(0, 150, 255, 0.3)' }}>
+          <BookOpen size={48} className="resource-icon" style={{ color: 'var(--accent)' }} />
+        </div>
+        <h2 style={{ textShadow: '0 2px 10px rgba(0,0,0,0.5)', fontWeight: 600 }}>Recall Memory</h2>
+        <p style={{ color: 'rgba(255,255,255,0.7)' }}>Incolla un link YouTube o un sito web. Friday estrarrà i concetti chiave e li salverà nel tuo Secondo Cervello.</p>
+      </div>
+
+      <div className="resource-input-wrapper" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="resource-input-box" style={{ 
+          display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.6)', 
+          border: '1px solid rgba(0, 150, 255, 0.3)', borderRadius: '16px', padding: '6px 12px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,150,255,0.1)', backdropFilter: 'blur(12px)'
+        }}>
+          <Link2 className="input-icon" size={20} style={{ color: 'var(--accent)' }} />
           <input 
             type="url" 
             placeholder="https://youtube.com/watch?v=... o https://..." 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
             disabled={status === "loading"}
-            style={{ flex: 1 }}
+            style={{ flex: 1, background: 'transparent', border: 'none', color: '#fff', fontSize: '1rem', padding: '12px', outline: 'none' }}
           />
           <input 
             type="file" 
@@ -300,25 +330,33 @@ export default function ResourceView({ isMobile }) {
             disabled={status === "loading"}
             title="Carica un PDF, immagine o documento"
             style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'rgba(255,255,255,0.5)',
+              background: 'rgba(255,255,255,0.05)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              color: 'rgba(255,255,255,0.8)',
               cursor: 'pointer',
-              padding: '0 12px',
+              padding: '8px 12px',
+              marginRight: '8px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'color 0.2s'
+              transition: 'all 0.2s'
             }}
-            onMouseEnter={(e) => e.currentTarget.style.color = '#fff'}
-            onMouseLeave={(e) => e.currentTarget.style.color = 'rgba(255,255,255,0.5)'}
+            onMouseEnter={(e) => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.color = 'rgba(255,255,255,0.8)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
           >
-            <Paperclip size={20} />
+            <Paperclip size={18} />
           </button>
           <button 
             className="assimilate-btn" 
             onClick={handleAssimilate}
             disabled={!url.trim() || status === "loading"}
+            style={{
+              background: 'var(--accent)', color: '#000', fontWeight: 'bold', border: 'none', padding: '10px 24px',
+              borderRadius: '12px', cursor: 'pointer', boxShadow: '0 4px 15px rgba(0,150,255,0.3)', transition: 'transform 0.2s'
+            }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             {status === "loading" ? <Loader2 className="spinner" size={18} /> : "Assimila"}
           </button>
@@ -331,20 +369,22 @@ export default function ResourceView({ isMobile }) {
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, y: -10, height: 0 }}
               className={`status-message ${status}`}
-              style={{ marginTop: '12px', overflow: 'hidden' }}
+              style={{ marginTop: '12px', overflow: 'hidden', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(10px)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}
             >
-              {status === "loading" && <Loader2 className="spinner" size={16} />}
-              {status === "success" && <CheckCircle2 size={16} />}
-              {status === "error" && <X size={16} />}
-              <span>{message}</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                {status === "loading" && <Loader2 className="spinner" size={16} style={{ color: 'var(--accent)' }} />}
+                {status === "success" && <CheckCircle2 size={16} style={{ color: '#10b981' }} />}
+                {status === "error" && <X size={16} style={{ color: '#ef4444' }} />}
+                <span style={{ fontWeight: 500 }}>{message}</span>
+              </div>
               
               {uploadProgress > 0 && uploadProgress < 100 && status === "loading" && (
-                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '8px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', marginTop: '12px', overflow: 'hidden' }}>
                   <motion.div 
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
                     transition={{ duration: 0.2 }}
-                    style={{ height: '100%', background: '#3b82f6', borderRadius: '2px' }}
+                    style={{ height: '100%', background: 'var(--accent)', borderRadius: '2px', boxShadow: '0 0 10px var(--accent)' }}
                   />
                 </div>
               )}
@@ -354,64 +394,106 @@ export default function ResourceView({ isMobile }) {
       </div>
 
       {/* GALLERIA RISORSE */}
-      <div className="resource-library">
-        <div className="library-header">
-          <h3>Libreria Salvata</h3>
-          <div className="library-controls">
-            <div className="search-box">
-              <Search size={16} />
+      <div className="resource-library" style={{ position: 'relative', zIndex: 10, background: 'transparent', borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: '40px' }}>
+        <div className="library-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 600, color: '#fff' }}>Libreria Salvata</h3>
+          <div className="library-controls" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+            <div className="search-box" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '8px 16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <Search size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
               <input 
                 type="text" 
                 placeholder="Cerca risorse o tag..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                style={{ background: 'transparent', border: 'none', color: '#fff', marginLeft: '8px', outline: 'none', fontSize: '0.9rem' }}
               />
             </div>
-            <div className="filter-chips">
-              <button className={filter === 'all' ? 'active' : ''} onClick={() => setFilter('all')}>Tutti</button>
-              <button className={filter === 'video' ? 'active' : ''} onClick={() => setFilter('video')}><Video size={14}/> Video</button>
-              <button className={filter === 'web' ? 'active' : ''} onClick={() => setFilter('web')}><Globe size={14}/> Web</button>
+            
+            <div className="filter-chips" style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '30px', padding: '4px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', gap: 0 }}>
+              {['all', 'video', 'web'].map(f => (
+                <div 
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  style={{
+                    position: 'relative', padding: '8px 20px', cursor: 'pointer', zIndex: 1, display: 'flex', alignItems: 'center', gap: '6px'
+                  }}
+                >
+                  {filter === f && (
+                    <motion.div
+                      layoutId="active-filter"
+                      style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 150, 255, 0.15)', borderRadius: '30px', border: '1px solid var(--accent)', boxShadow: '0 0 15px rgba(0, 150, 255, 0.2)' }}
+                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    />
+                  )}
+                  <span style={{ fontSize: '0.85rem', fontWeight: 600, color: filter === f ? '#fff' : 'rgba(255,255,255,0.5)', zIndex: 2, transition: 'color 0.3s', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {f === 'video' && <Video size={14}/>}
+                    {f === 'web' && <Globe size={14}/>}
+                    {f === 'all' && "Tutti"}
+                    {f === 'video' && "Video"}
+                    {f === 'web' && "Web"}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
         {loadingList ? (
-          <div className="library-loading">
-            <Loader2 className="spinner" size={20} />
+          <div className="library-loading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', padding: '40px', color: 'rgba(255,255,255,0.5)' }}>
+            <Loader2 className="spinner" size={20} style={{ color: 'var(--accent)' }} />
             Sincronizzazione col Vault...
           </div>
         ) : filteredResources.length === 0 ? (
-          <div className="library-empty">
+          <div className="library-empty" style={{ textAlign: 'center', padding: '60px 20px', color: 'rgba(255,255,255,0.4)', background: 'rgba(0,0,0,0.2)', borderRadius: '16px', border: '1px dashed rgba(255,255,255,0.1)' }}>
+            <BookOpen size={48} style={{ margin: '0 auto 16px auto', opacity: 0.5 }} />
             Nessuna risorsa trovata per i criteri di ricerca.
           </div>
         ) : (
-          <div className="resource-grid">
+          <div className="resource-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
             {filteredResources.map((res, idx) => (
               <motion.div 
                 key={res.id || idx} 
                 initial={{ opacity: 0, y: 10 }} 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.05 }}
-                className="resource-card"
                 onClick={() => {
                   setSelectedResource(res);
                   setChatMessages([]);
                   setChatInput("");
                 }}
-                style={{ cursor: 'pointer' }}
+                style={{ 
+                  cursor: 'pointer', background: 'rgba(255,255,255,0.03)', 
+                  border: '1px solid rgba(255,255,255,0.05)', borderRadius: '16px',
+                  padding: '20px', transition: 'all 0.3s ease',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.2)', backdropFilter: 'blur(10px)',
+                  display: 'flex', flexDirection: 'column', gap: '12px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.06)';
+                  e.currentTarget.style.borderColor = 'rgba(0,150,255,0.3)';
+                  e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,150,255,0.15)';
+                  e.currentTarget.style.transform = 'translateY(-4px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                  e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)';
+                  e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
               >
-                <div className="card-top">
-                  <div className={`card-icon-wrapper ${res.type}`}>
+                <div className="card-top" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '10px', background: res.type === 'video' ? 'rgba(239,68,68,0.1)' : 'rgba(59,130,246,0.1)', color: res.type === 'video' ? '#ef4444' : '#3b82f6' }}>
                     {res.type === 'video' ? <Video size={18} /> : <Globe size={18} />}
                   </div>
-                  <h4 title={res.title}>{res.title}</h4>
+                  <h4 title={res.title} style={{ margin: 0, fontSize: '1rem', fontWeight: 600, color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{res.title}</h4>
                 </div>
-                {res.summary && <p className="card-summary">{res.summary}</p>}
+                {res.summary && <p style={{ margin: 0, fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{res.summary}</p>}
                 {res.tags && res.tags.length > 0 && (
-                  <div className="card-tags">
-                    {res.tags.map(t => (
-                      <span key={t} className="card-tag"><Tag size={10} style={{marginRight:3}}/> {t}</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
+                    {res.tags.slice(0, 3).map(t => (
+                      <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.7)' }}><Tag size={10} style={{ color: 'var(--accent)' }}/> {t}</span>
                     ))}
+                    {res.tags.length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{res.tags.length - 3}</span>}
                   </div>
                 )}
               </motion.div>
@@ -536,34 +618,37 @@ export default function ResourceView({ isMobile }) {
                 </div>
 
                 {/* TABS NAVIGATION */}
-                <div className="tabs-nav">
-                  <button 
-                    onClick={() => setActiveTab('reader')}
-                    className={`tab-btn ${activeTab === 'reader' ? 'active reader' : ''}`}
-                  >
-                    <FileText size={16} /> Reader
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('connections')}
-                    className={`tab-btn ${activeTab === 'connections' ? 'active connections' : ''}`}
-                  >
-                    <Network size={16} /> Connessioni
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('graph')}
-                    className={`tab-btn ${activeTab === 'graph' ? 'active graph' : ''}`}
-                  >
-                    <BrainCircuit size={16} /> Mini Grafo
-                  </button>
-                  {selectedResource.type === 'video' && (
-                    <button 
-                      onClick={() => setActiveTab('raw')}
-                      className={`tab-btn ${activeTab === 'raw' ? 'active connections' : ''}`}
-                      style={activeTab === 'raw' ? {color: '#f43f5e', borderColor: 'rgba(244,63,94,0.2)', background: 'rgba(244,63,94,0.1)'} : {}}
-                    >
-                      <FileText size={16} /> Raw Transcript
-                    </button>
-                  )}
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '6px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', gap: 0, marginBottom: '24px', flexWrap: 'wrap' }}>
+                  {[
+                    { id: 'reader', label: 'Reader', icon: FileText, color: '#3b82f6' },
+                    { id: 'connections', label: 'Connessioni', icon: Network, color: '#a855f7' },
+                    { id: 'graph', label: 'Mini Grafo', icon: BrainCircuit, color: '#10b981' },
+                    ...(selectedResource.type === 'video' ? [{ id: 'raw', label: 'Raw Transcript', icon: FileText, color: '#f43f5e' }] : [])
+                  ].map(tab => {
+                    const Icon = tab.icon;
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <div 
+                        key={tab.id}
+                        onClick={() => setActiveTab(tab.id)}
+                        style={{
+                          position: 'relative', padding: '10px 20px', cursor: 'pointer', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px', flex: 1, justifyContent: 'center'
+                        }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="active-modal-tab"
+                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: `rgba(${tab.color === '#3b82f6' ? '59,130,246' : tab.color === '#a855f7' ? '168,85,247' : tab.color === '#10b981' ? '16,185,129' : '244,63,94'}, 0.15)`, borderRadius: '12px', border: `1px solid ${tab.color}`, boxShadow: `0 0 15px rgba(${tab.color === '#3b82f6' ? '59,130,246' : tab.color === '#a855f7' ? '168,85,247' : tab.color === '#10b981' ? '16,185,129' : '244,63,94'}, 0.2)` }}
+                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                          />
+                        )}
+                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.5)', zIndex: 2, transition: 'color 0.3s', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <Icon size={16} style={{ color: isActive ? tab.color : 'inherit' }} />
+                          {tab.label}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {/* TAB CONTENT */}
