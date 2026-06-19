@@ -954,76 +954,81 @@ html, body {
 .send-btn:active { transform: scale(0.95); }
 .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-/* Orb Styles */
-.orb-container { position: relative; width: 180px; height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;}
-@media (min-width: 768px) { .orb-container { width: 240px; height: 120px; } }
-.orb {
-  width: 100%; height: 100%; 
-  border-radius: 50%;
-  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(0,180,255,0.85) 30%, rgba(0,30,80,0.95) 100%);
-  box-shadow: 0 0 60px rgba(0,180,255,0.4), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5);
+/* Siri Wave Styles */
+.siri-wave-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100px;
+  width: 100%;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  margin-bottom: 24px;
   position: relative;
-  overflow: hidden;
-}
-.orb::after {
-  content: ''; position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(ellipse at 60% 60%, rgba(0,180,255,0.4), transparent 60%);
-  mix-blend-mode: overlay;
-  animation: pulseGlow 4s infinite alternate ease-in-out;
-}
-.orb.idle { animation: idleOrb 4s infinite alternate ease-in-out; }
-.orb.recording { 
-  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,50,80,0.85) 30%, rgba(60,0,10,0.95) 100%); 
-  box-shadow: 0 0 80px rgba(255,50,80,0.6), inset 0 0 40px rgba(255,255,255,0.6), inset -20px -20px 40px rgba(0,0,0,0.6);
-  animation: recOrb 2s infinite alternate ease-in-out;
-}
-.orb.thinking { 
-  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,200,60,0.85) 30%, rgba(60,40,0,0.95) 100%); 
-  box-shadow: 0 0 60px rgba(255,200,60,0.5), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5); 
-  animation: thinkOrb 1s infinite alternate ease-in-out; 
-}
-.orb.speaking { 
-  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(100,200,255,0.85) 30%, rgba(0,20,60,0.95) 100%); 
-  animation: speakOrb 0.6s infinite alternate ease-in-out; 
 }
 
-@keyframes idleOrb { 
-  0% { transform: scale(0.95) translateY(4px); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 30px rgba(0,180,255,0.3), inset 0 0 30px rgba(255,255,255,0.3), inset -20px -20px 40px rgba(0,0,0,0.5); } 
-  50% { border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; }
-  100% { transform: scale(1.05) translateY(-4px); border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; box-shadow: 0 0 90px rgba(0,180,255,0.7), inset 0 0 50px rgba(255,255,255,0.7), inset -20px -20px 40px rgba(0,0,0,0.5); } 
-}
-@keyframes recOrb { 0% { border-radius: 50%; } 100% { border-radius: 40% 60% 40% 60% / 60% 40% 60% 40%; } }
-@keyframes thinkOrb { 0% { transform: scale(0.98); filter: brightness(1); border-radius: 50%; } 100% { transform: scale(1.08); filter: brightness(1.4); border-radius: 45% 55% 45% 55% / 55% 45% 55% 45%; } }
-@keyframes speakOrb { 
-  0% { transform: scale(0.98); box-shadow: 0 0 50px rgba(100,180,255,0.5), inset 0 0 30px rgba(255,255,255,0.5); border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; } 
-  33% { border-radius: 60% 40% 40% 60% / 40% 60% 50% 40%; }
-  66% { transform: scale(1.15); box-shadow: 0 0 120px rgba(100,200,255,1), inset 0 0 80px rgba(255,255,255,0.9); border-radius: 40% 60% 50% 40% / 40% 50% 60% 50%; } 
-  100% { transform: scale(1.05); border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
-}
-@keyframes pulseGlow { 0% { opacity: 0.2; transform: scale(0.8) rotate(0deg); } 100% { opacity: 1; transform: scale(1.2) rotate(20deg); } }
-
-.orb-rings { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.1); pointer-events: none;}
-.orb-rings::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px dashed rgba(0,180,255,0.4); animation: spinRing 15s linear infinite; }
-.orb-rings::after { content: ''; position: absolute; inset: -60px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.08); animation: spinRing 25s linear infinite reverse; }
-
-/* Layer Geometrico per l'Orb */
-.orb-core-geo {
+.siri-wave-bg {
   position: absolute;
-  inset: 15%;
-  border: 2px solid rgba(0,255,255,0.3);
-  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  animation: spinRing 10s linear infinite;
+  inset: -20px;
+  background: radial-gradient(ellipse at center, rgba(0, 180, 255, 0.15), transparent 70%);
   pointer-events: none;
-  z-index: 2;
-  mix-blend-mode: screen;
+  filter: blur(10px);
 }
-.orb-core-geo::after {
-  content: ''; position: absolute; inset: -20%;
-  border: 1px solid rgba(0,180,255,0.5);
-  clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);
-  animation: spinRing 5s linear infinite reverse;
+
+.siri-wave-bar {
+  width: 5px;
+  border-radius: 6px;
+  background: #00b4ff;
+  box-shadow: 0 0 10px rgba(0, 180, 255, 0.6);
+  transition: height 0.05s linear, background-color 0.3s ease, box-shadow 0.3s ease;
+  will-change: height;
+  z-index: 1;
+}
+
+/* Idle State (Breathing) */
+.siri-wave-container.idle .siri-wave-bar {
+  animation: idleWave 3s infinite ease-in-out alternate;
+  animation-delay: calc(var(--dist) * 0.15s);
+  background: rgba(0, 180, 255, 0.6);
+  box-shadow: 0 0 15px rgba(0, 180, 255, 0.4);
+}
+
+/* Thinking State (Processing) */
+.siri-wave-container.thinking .siri-wave-bar {
+  background: #ffcc00;
+  box-shadow: 0 0 20px rgba(255, 204, 0, 0.8);
+  animation: thinkWave 1s infinite ease-in-out alternate;
+  animation-delay: calc(var(--dist) * 0.1s);
+}
+
+/* Recording State (Microphone active) */
+.siri-wave-container.recording .siri-wave-bar {
+  background: #ff3366;
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.8);
+  /* height is controlled inline by React audioLevel */
+}
+
+/* Speaking State (TTS active) */
+.siri-wave-container.speaking .siri-wave-bar {
+  background: #00ffea;
+  box-shadow: 0 0 25px rgba(0, 255, 234, 0.9);
+  animation: speakWave 0.4s infinite ease-in-out alternate;
+  animation-delay: calc(var(--dist) * 0.08s);
+}
+
+@keyframes idleWave {
+  0% { height: calc(10px - var(--dist) * 0.2px); opacity: 0.5; }
+  100% { height: calc(30px - var(--dist) * 1.5px); opacity: 1; }
+}
+
+@keyframes thinkWave {
+  0% { height: 10px; opacity: 0.3; transform: scaleY(0.8); }
+  100% { height: calc(45px - var(--dist) * 2px); opacity: 1; transform: scaleY(1.2); }
+}
+
+@keyframes speakWave {
+  0% { height: calc(15px - var(--dist) * 0.5px); transform: scaleY(0.9); opacity: 0.7; }
+  100% { height: calc(70px - var(--dist) * 3px); transform: scaleY(1.1); opacity: 1; }
 }
 
 /* Sfondo Animato Puntini (Particles) */

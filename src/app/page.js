@@ -515,25 +515,34 @@ export default function Dashboard() {
                   {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
                 </div>
 
-                <div className="orb-container">
-                  <div className="orb-rings" />
-                  <div className="orb-core-geo" />
-                  <div 
-                    className={`orb ${mode}`} 
-                    onClick={handleOrbClick}
-                    style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
-                  />
-                  {mode === "recording" && (
-                    <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px', alignItems: 'flex-end', height: '50px' }}>
-                      {[0.5, 0.8, 1.2, 0.9, 0.6].map((mult, idx) => (
-                        <div key={idx} style={{ 
-                          height: `${Math.max(6, 50 * audioLevel * mult)}px`,
-                          width: '5px', background: 'var(--accent)', borderRadius: '4px',
-                          boxShadow: '0 0 10px var(--accent)', transition: 'height 0.05s ease'
-                        }} />
-                      ))}
-                    </div>
-                  )}
+                <div 
+                  className={`siri-wave-container ${mode}`} 
+                  onClick={handleOrbClick}
+                >
+                  <div className="siri-wave-bg" />
+                  {Array.from({length: 25}).map((_, i) => {
+                    const mid = 12;
+                    const dist = Math.abs(i - mid);
+                    const isRecording = mode === "recording";
+                    
+                    // Base heights
+                    let h = 10;
+                    if (isRecording) {
+                      // Reactive to microphone
+                      h = 10 + (audioLevel * Math.max(0, 15 - dist) * 12);
+                    }
+                    
+                    return (
+                      <div 
+                        key={i} 
+                        className="siri-wave-bar" 
+                        style={{ 
+                          '--dist': dist,
+                          height: isRecording ? `${h}px` : undefined
+                        }} 
+                      />
+                    );
+                  })}
                 </div>
               </div>
 
