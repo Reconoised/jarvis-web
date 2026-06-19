@@ -82,6 +82,7 @@ const CustomAudioPlayer = ({ url }) => {
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState("OS"); // OS | Meditazione | Risorse | Manuali | Grafo | Diario | Progetti | Obiettivi
   const [isFocusOpen, setIsFocusOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [mode, setMode] = useState("idle"); // idle | recording | thinking | speaking
   const [messages, setMessages] = useState([]);
   const [tasks, setTasks] = useState([]);
