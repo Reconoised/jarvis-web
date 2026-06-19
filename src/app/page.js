@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen, Volume2, VolumeX, User, Play, Pause } from "lucide-react";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen, Volume2, VolumeX, User, Play, Pause, Settings, Menu, ChevronLeft, ChevronRight } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { get, set } from 'idb-keyval';
 import ReactMarkdown from 'react-markdown';
@@ -614,24 +614,43 @@ export default function Dashboard() {
 
   return (
     <div className="app-container">
-      <div className="sidebar">
+      <div className={`sidebar ${isSidebarOpen ? 'open' : 'collapsed'}`}>
         <div className="sidebar-logo-container">
-          <img src="/logo.png" alt="Friday OS" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'cover', boxShadow: '0 0 15px rgba(0, 150, 255, 0.3)' }} />
-          <div className="sidebar-logo-text">
-            FRIDAY
-            <span>Workspace</span>
+          <img src="/logo_minimal.png" alt="Friday OS" style={{ width: '40px', height: '40px', borderRadius: '12px', objectFit: 'contain' }} />
+          {isSidebarOpen && (
+            <div className="sidebar-logo-text">
+              FRIDAY
+              <span>Workspace</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="sidebar-nav-scroll">
+          {navItems.map(item => (
+            <div 
+              key={item.id} 
+              className={`nav-item ${currentView === item.id ? "active" : ""}`}
+              onClick={() => setCurrentView(item.id)}
+              title={!isSidebarOpen ? item.label : ""}
+            >
+              <div className="nav-icon-box">{item.icon}</div>
+              {isSidebarOpen && <span>{item.label}</span>}
+            </div>
+          ))}
+        </div>
+
+        <div className="sidebar-bottom-controls">
+          <div className="nav-item" title={!isSidebarOpen ? "Impostazioni" : ""}>
+            <div className="nav-icon-box"><Settings size={22} /></div>
+            {isSidebarOpen && <span>Impostazioni</span>}
+          </div>
+          <div className="nav-item collapse-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)} title={isSidebarOpen ? "Riduci" : "Espandi"}>
+            <div className="nav-icon-box">
+              {isSidebarOpen ? <ChevronLeft size={22} /> : <Menu size={22} />}
+            </div>
+            {isSidebarOpen && <span>Comprimi</span>}
           </div>
         </div>
-        {navItems.map(item => (
-          <div 
-            key={item.id} 
-            className={`nav-item ${currentView === item.id ? "active" : ""}`}
-            onClick={() => setCurrentView(item.id)}
-          >
-            <div className="nav-icon-box">{item.icon}</div>
-            <span>{item.label}</span>
-          </div>
-        ))}
       </div>
 
       <main className="dashboard">
