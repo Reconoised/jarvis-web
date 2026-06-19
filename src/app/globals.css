@@ -517,34 +517,161 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Specific Widgets Layout */
-.orb-widget { grid-column: span 12; grid-row: span 5; align-items: center; justify-content: center; position: relative; }
-.focus-widget { grid-column: span 12; grid-row: span 4; }
-.inbox-widget { grid-column: span 12; grid-row: span 3; }
+/* Nuova Architettura OS Layout */
+.os-layout {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  gap: 20px;
+  overflow: hidden;
+}
 
-@media (max-width: 767px) {
-  .bento-grid {
-    display: flex;
+/* Colonna Centrale Immersiva */
+.center-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  overflow: hidden;
+  padding: 24px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.core-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.core-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: -20px;
+}
+
+/* Chat con Fade-Out in alto */
+.fade-out-mask {
+  mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 15%, black 100%);
+}
+.chat-messages-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-top: 40px; /* spazio per il fade out */
+  min-height: min-content;
+}
+
+/* Pannello Destro Collassabile */
+.right-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  flex-shrink: 0;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+.right-panel.open {
+  width: 320px;
+  padding: 24px;
+}
+.right-panel.closed {
+  width: 60px;
+  padding: 24px 0;
+  align-items: center;
+  cursor: pointer;
+}
+.right-panel.closed:hover {
+  background: rgba(255,255,255,0.05);
+}
+
+.right-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.right-panel.closed .right-panel-header {
+  justify-content: center;
+  margin-bottom: 0;
+}
+
+.toggle-panel-btn {
+  background: none;
+  border: none;
+  color: var(--fg-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle-panel-btn:hover {
+  color: var(--fg);
+  background: rgba(255,255,255,0.1);
+}
+
+.right-panel-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Micro-Cards per Focus */
+.task-list.micro {
+  gap: 8px;
+}
+.task.micro-task {
+  padding: 10px 12px;
+  gap: 10px;
+  font-size: 0.85rem;
+  border-radius: 12px;
+}
+
+@media (max-width: 1024px) {
+  .os-layout {
     flex-direction: column;
-    height: auto;
+    overflow-y: auto;
   }
-  .bento-item {
-    flex-shrink: 0;
+  .center-column {
+    flex: none;
+    min-height: 80vh;
   }
-  .orb-widget { min-height: 300px; }
-  .focus-widget { min-height: 350px; }
-  .inbox-widget { min-height: 500px; }
-}
-
-@media (min-width: 768px) {
-  .orb-widget { grid-column: span 12; grid-row: span 5; }
-  .focus-widget { grid-column: span 12; grid-row: span 5; }
-  .inbox-widget { grid-column: span 12; grid-row: span 8; }
-}
-@media (min-width: 1024px) {
-  .orb-widget { grid-column: span 4; grid-row: span 5; background: linear-gradient(180deg, rgba(10,10,10,0.6) 0%, rgba(0,100,255,0.05) 100%); }
-  .focus-widget { grid-column: span 4; grid-row: span 7; }
-  .inbox-widget { grid-column: span 8; grid-row: span 12; }
+  .right-panel {
+    flex: none;
+    min-height: 40vh;
+  }
+  .right-panel.open {
+    width: 100%;
+  }
+  .right-panel.closed {
+    width: 100%;
+    height: 60px;
+    min-height: 60px;
+    flex-direction: row;
+    padding: 0 20px;
+  }
+  .right-panel.closed .right-panel-header {
+    margin: 0;
+  }
 }
 
 /* Tasks */

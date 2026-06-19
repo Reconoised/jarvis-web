@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown } from "lucide-react";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import MeditationView from "./components/MeditationView";
 import ResourceView from "./components/ResourceView";
@@ -11,6 +11,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravityc
 
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState("OS"); // OS | Meditazione | Risorse | Manuali | Grafo | Diario | Progetti | Obiettivi
+  const [isFocusOpen, setIsFocusOpen] = useState(true);
   const [mode, setMode] = useState("idle"); // idle | recording | thinking | speaking
   const [messages, setMessages] = useState([]);
   const [tasks, setTasks] = useState([]);
@@ -481,118 +482,129 @@ export default function Dashboard() {
         </div>
         
         {currentView === "OS" ? (
-          <div className="bento-grid">
+          <div className="os-layout">
             
-            {/* WIDGET 1: Friday Orb */}
-        <motion.div className="bento-item orb-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}}>
-          <h3 className="widget-title"><BrainCircuit size={16} /> Friday Core</h3>
-          
-          <div className="orb-container">
-            <div className="orb-rings" />
-            <div 
-              className={`orb ${mode}`} 
-              onClick={handleOrbClick}
-              style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
-            />
-            {mode === "recording" && (
-              <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px', alignItems: 'flex-end', height: '50px' }}>
-                {[0.5, 0.8, 1.2, 0.9, 0.6].map((mult, idx) => (
-                  <div key={idx} style={{ 
-                    height: `${Math.max(6, 50 * audioLevel * mult)}px`,
-                    width: '5px', background: 'var(--accent)', borderRadius: '4px',
-                    boxShadow: '0 0 10px var(--accent)', transition: 'height 0.05s ease'
-                  }} />
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="status-text">
-            {mode === "recording" && <span className="rec-dot" />}
-            {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
-            {STATUS[mode]}
-          </div>
-
-          <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
-            {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
-            {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
-          </button>
-          
-          {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
-        </motion.div>
-
-        {/* WIDGET 2: Focus del Giorno */}
-        <motion.div className="bento-item focus-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.2}}>
-          <h3 className="widget-title"><ListTodo size={16} /> Focus del Giorno</h3>
-          
-          {tasks.length === 0 ? (
-            <div className="empty-state">Nessuna task per oggi.</div>
-          ) : (
-            <div className="task-list">
-              {tasks.map((t, i) => (
-                <div key={i} className={`task ${t.isDone ? "done" : ""}`}>
-                  {t.isDone ? <CheckCircle2 size={18} className="dot checked" /> : <Circle size={18} className="dot" />}
-                  <span>{t.text}</span>
+            {/* CENTER COLUMN: Friday Core + Brain Inbox */}
+            <motion.div className="center-column" initial={{opacity:0}} animate={{opacity:1}} transition={{delay:0.1}}>
+              
+              {/* Friday Core Header */}
+              <div className="core-header">
+                <div className="orb-container">
+                  <div className="orb-rings" />
+                  <div 
+                    className={`orb ${mode}`} 
+                    onClick={handleOrbClick}
+                    style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
+                  />
+                  {mode === "recording" && (
+                    <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px', alignItems: 'flex-end', height: '50px' }}>
+                      {[0.5, 0.8, 1.2, 0.9, 0.6].map((mult, idx) => (
+                        <div key={idx} style={{ 
+                          height: `${Math.max(6, 50 * audioLevel * mult)}px`,
+                          width: '5px', background: 'var(--accent)', borderRadius: '4px',
+                          boxShadow: '0 0 10px var(--accent)', transition: 'height 0.05s ease'
+                        }} />
+                      ))}
+                    </div>
+                  )}
                 </div>
-              ))}
+
+                <div className="core-controls">
+                  <div className="status-text">
+                    {mode === "recording" && <span className="rec-dot" />}
+                    {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
+                    {STATUS[mode]}
+                  </div>
+                  <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
+                    {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+                    {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
+                  </button>
+                  {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
+                </div>
+              </div>
+
+              {/* Brain Inbox (Chat) */}
+              <div className="chat fade-out-mask" ref={chatContainerRef} onScroll={handleChatScroll}>
+                {messages.length === 0 && (
+                  <div className="empty-state">Invia un pensiero veloce o chiedi qualcosa a Friday.</div>
+                )}
+                <div className="chat-messages-scroll">
+                  <AnimatePresence>
+                    {messages.map((m, i) => (
+                      <motion.div 
+                        key={i} 
+                        initial={{opacity:0, y: 20}} 
+                        animate={{opacity:1, y:0}}
+                        className={`msg ${m.role}`}
+                      >
+                        <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
+                        {renderMessageContent(m.text)}
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                  <div ref={messagesEndRef} />
+                </div>
+                
+                {showScrollBtn && (
+                  <button 
+                    onClick={scrollToBottom}
+                    className="scroll-bottom-btn"
+                    style={{
+                      position: 'absolute', bottom: '80px', right: '20px', 
+                      background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '50%', padding: '10px', color: '#fff', cursor: 'pointer',
+                      backdropFilter: 'blur(10px)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}
+                  >
+                    <ChevronDown size={20} />
+                  </button>
+                )}
+              </div>
+
+              {/* Input Bar */}
+              <div className="input-bar">
+                <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} accept=".txt,.md,.pdf,.csv,.json" />
+                <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><Paperclip size={18} /></button>
+                <input 
+                  className="text-input" 
+                  placeholder="Scrivi a Friday..." 
+                  value={inputText} 
+                  onChange={e => setInputText(e.target.value)} 
+                  onKeyDown={e => { if (e.key === "Enter") handleSendText(); }} 
+                />
+                <button className="send-btn" onClick={handleSendText} disabled={mode === "thinking"}>
+                  <Send size={16} />
+                </button>
+              </div>
+            </motion.div>
+
+            {/* RIGHT PANEL: Focus del Giorno */}
+            <div className={`right-panel ${isFocusOpen ? 'open' : 'closed'}`}>
+              <div className="right-panel-header">
+                {isFocusOpen && <h3 className="widget-title"><ListTodo size={16} /> Focus</h3>}
+                <button className="toggle-panel-btn" onClick={() => setIsFocusOpen(!isFocusOpen)}>
+                  {isFocusOpen ? <PanelRightClose size={18} /> : <PanelRightOpen size={18} />}
+                </button>
+              </div>
+
+              {isFocusOpen && (
+                <div className="right-panel-content">
+                  {tasks.length === 0 ? (
+                    <div className="empty-state" style={{fontSize: '0.85rem'}}>Nessuna task.</div>
+                  ) : (
+                    <div className="task-list micro">
+                      {tasks.map((t, i) => (
+                        <div key={i} className={`task micro-task ${t.isDone ? "done" : ""}`}>
+                          {t.isDone ? <CheckCircle2 size={16} className="dot checked" /> : <Circle size={16} className="dot" />}
+                          <span>{t.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
-          )}
-        </motion.div>
 
-        {/* WIDGET 3: Brain Inbox (Chat & Input) */}
-        <motion.div className="bento-item inbox-widget" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}}>
-          <h3 className="widget-title"><MessageSquare size={16} /> Brain Inbox</h3>
-          
-          <div className="chat" ref={chatContainerRef} onScroll={handleChatScroll} style={{ position: 'relative' }}>
-            {messages.length === 0 && (
-              <div className="empty-state">Invia un pensiero veloce o chiedi qualcosa a Friday.</div>
-            )}
-            <AnimatePresence>
-              {messages.map((m, i) => (
-                <motion.div 
-                  key={i} 
-                  initial={{opacity:0, x: m.role==="user" ? 20 : -20}} 
-                  animate={{opacity:1, x:0}}
-                  className={`msg ${m.role}`}
-                >
-                  <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
-                  {renderMessageContent(m.text)}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-            <div ref={messagesEndRef} />
-            
-            {showScrollBtn && (
-              <button 
-                onClick={scrollToBottom}
-                className="scroll-bottom-btn"
-                style={{
-                  position: 'absolute', bottom: '20px', right: '20px', 
-                  background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
-                  borderRadius: '50%', padding: '10px', color: '#fff', cursor: 'pointer',
-                  backdropFilter: 'blur(10px)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
-                }}
-              >
-                <ChevronDown size={20} />
-              </button>
-            )}
-          </div>
-
-          <div className="input-bar">
-            <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} accept=".txt,.md,.pdf,.csv,.json" />
-            <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><Paperclip size={18} /></button>
-            <input 
-              className="text-input" 
-              placeholder="Scrivi qui..." 
-              value={inputText} 
-              onChange={e => setInputText(e.target.value)} 
-              onKeyDown={e => { if (e.key === "Enter") handleSendText(); }} 
-            />
-            <button className="send-btn" onClick={handleSendText} disabled={mode === "thinking"}>
-              <Send size={16} />
-            </button>
-          </div>
-        </motion.div>
           </div>
         ) : currentView === "Meditazione" ? (
           <MeditationView />
