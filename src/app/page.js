@@ -218,6 +218,17 @@ export default function Dashboard() {
     else startWake();
   }
 
+  useEffect(() => {
+    window.fridayStopWake = stopWake;
+    window.fridayStartWake = startWake;
+    window.fridayIsWakeEnabled = () => wakeEnabledRef.current;
+    return () => {
+      delete window.fridayStopWake;
+      delete window.fridayStartWake;
+      delete window.fridayIsWakeEnabled;
+    };
+  }, []);
+
   async function startWake() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });

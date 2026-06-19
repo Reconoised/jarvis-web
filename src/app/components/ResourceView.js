@@ -253,12 +253,18 @@ export default function ResourceView({ isMobile }) {
   const dictationStreamRef = useRef(null);
   const dictationAudioCtxRef = useRef(null);
   const dictationAnimRef = useRef(null);
+  const dummyRecRef = useRef(null);
   const dictationTextRef = useRef("");
+  const wasWakeEnabledRef = useRef(false);
 
   const stopVoiceDictation = (shouldSend = false) => {
     if (dictationAnimRef.current) {
       cancelAnimationFrame(dictationAnimRef.current);
       dictationAnimRef.current = null;
+    }
+    if (dummyRecRef.current) {
+      try { dummyRecRef.current.stop(); } catch(e) {}
+      dummyRecRef.current = null;
     }
     if (dictationRecRef.current) {
       try { dictationRecRef.current.stop(); } catch(e) {}
@@ -278,12 +284,23 @@ export default function ResourceView({ isMobile }) {
       handleSendChat(dictationTextRef.current);
       dictationTextRef.current = "";
     }
+
+    if (wasWakeEnabledRef.current && window.fridayStartWake) {
+      window.fridayStartWake();
+      wasWakeEnabledRef.current = false;
+    }
   };
 
   const startVoiceDictation = async () => {
     if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
       alert("Il tuo browser non supporta la dettatura vocale.");
       return;
+    }
+
+    if (window.fridayIsWakeEnabled && window.fridayIsWakeEnabled()) {
+      wasWakeEnabledRef.current = true;
+      if (window.fridayStopWake) window.fridayStopWake();
+      await new Promise(r => setTimeout(r, 200)); // Attendiamo il rilascio dell'hardware
     }
 
     try {
@@ -375,6 +392,12 @@ export default function ResourceView({ isMobile }) {
         dictationAnimRef.current = requestAnimationFrame(tick);
       }
       tick();
+
+      // IMPORTANT: Safari requires the stream to be actively recorded by a MediaRecorder 
+      // otherwise it suspends the microphone and throws a 'network' error in SpeechRecognition
+      const dummyRec = new MediaRecorder(stream);
+      dummyRecRef.current = dummyRec;
+      dummyRec.start();
 
     } catch (e) {
       console.error("Accesso microfono negato", e);
