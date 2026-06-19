@@ -243,12 +243,20 @@ export default function Dashboard() {
 
   async function sendAudio(blob) {
     setMode("thinking");
-    setMessages(prev => [...prev, { role: "user", text: "🎙️ Messaggio vocale" }]);
+    const audioUrl = URL.createObjectURL(blob);
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const msgId = Date.now();
+    setMessages(prev => [...prev, { id: msgId, role: "user", text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, timestamp }]);
     try {
       const fd = new FormData();
       fd.append("audio", blob, "rec.webm");
       const res = await fetch(`${BACKEND_URL}/api/jarvis/voice`, { method: "POST", body: fd });
       const data = await res.json();
+      
+      if (data.transcript) {
+        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, transcript: data.transcript } : m));
+      }
+
       if (data.response) {
         let text = data.response;
         const match = text.match(/\[OPEN_RESOURCE:\s*(.*?)\]/);
@@ -269,25 +277,26 @@ export default function Dashboard() {
             }, 600);
           }
         }
-        setMessages(prev => [...prev, { role: "assistant", text: text }]);
+        setMessages(prev => [...prev, { role: "assistant", text: text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         if (ttsEnabled) {
           speakNeural(text);
         } else {
           setMode("idle"); restartWake();
         }
       } else {
-        setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
+        setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota"), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         setMode("idle"); restartWake();
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message }]);
+      setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
       setMode("idle"); restartWake();
     }
   }
 
   async function sendText(text_input) {
     if (!text_input.trim() || mode === "thinking") return;
-    setMessages(prev => [...prev, { role: "user", text: text_input }]);
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    setMessages(prev => [...prev, { role: "user", text: text_input, timestamp }]);
     setMode("thinking");
     try {
       const res = await fetch(`${BACKEND_URL}/api/jarvis`, {
@@ -316,18 +325,18 @@ export default function Dashboard() {
             }, 600);
           }
         }
-        setMessages(prev => [...prev, { role: "assistant", text: text }]);
+        setMessages(prev => [...prev, { role: "assistant", text: text, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         if (ttsEnabled) {
           speakNeural(text);
         } else {
           setMode("idle"); restartWake();
         }
       } else {
-        setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
+        setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota"), timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
         setMode("idle"); restartWake();
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message }]);
+      setMessages(prev => [...prev, { role: "assistant", text: "Connessione fallita: " + err.message, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }]);
       setMode("idle"); restartWake();
     }
   }
@@ -512,7 +521,6 @@ export default function Dashboard() {
                       {ttsEnabled ? "Voice: ON" : "Voice: OFF"}
                     </button>
                   </div>
-                  {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
                 </div>
 
                 <div 
@@ -529,7 +537,7 @@ export default function Dashboard() {
                     let h = 10;
                     if (isRecording) {
                       // Reactive to microphone
-                      h = 10 + (audioLevel * Math.max(0, 15 - dist) * 12);
+                      h = 10 + (audioLevel * Math.max(0, 15 - dist) * 20); // increased multiplier
                     }
                     
                     return (
@@ -544,6 +552,11 @@ export default function Dashboard() {
                     );
                   })}
                 </div>
+                {wakeHeard && (
+                  <div style={{ position: 'absolute', top: '24px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', backdropFilter: 'blur(10px)', color: 'var(--accent)', zIndex: 100 }}>
+                    🎧 Heard: "{wakeHeard}"
+                  </div>
+                )}
               </div>
 
               {/* Brain Inbox (Chat) */}
@@ -553,15 +566,30 @@ export default function Dashboard() {
                 )}
                 <div className="chat-messages-scroll">
                   <AnimatePresence>
-                    {messages.map((m, i) => (
+                    {messages.map((m, idx) => (
                       <motion.div 
-                        key={i} 
+                        key={m.id || idx} 
                         initial={{opacity:0, y: 20}} 
                         animate={{opacity:1, y:0}}
                         className={`msg ${m.role}`}
                       >
-                        <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
-                        {renderMessageContent(m.text)}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                          <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
+                          {m.timestamp && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>{m.timestamp}</span>}
+                        </div>
+                        
+                        {m.isAudio ? (
+                          <div style={{ marginTop: '4px' }}>
+                            <audio src={m.audioUrl} controls style={{ height: '32px', width: '100%', outline: 'none', borderRadius: '16px', filter: 'invert(1) hue-rotate(180deg)' }} />
+                            {m.transcript && (
+                              <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>
+                                "{m.transcript}"
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          renderMessageContent(m.text)
+                        )}
                       </motion.div>
                     ))}
                   </AnimatePresence>
