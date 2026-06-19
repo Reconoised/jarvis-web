@@ -135,7 +135,14 @@ export default function MeditationView() {
             transition={{ duration: currentDuration, ease: "easeInOut" }}
             style={{ width: '120px', height: '120px', background: 'radial-gradient(circle, rgba(0,150,255,0.6) 0%, rgba(0,50,150,0) 70%)', borderRadius: '50%', position: 'absolute' }}
           />
-          <div className="zen-orb-core" style={{ width: '60px', height: '60px', background: 'var(--accent)', borderRadius: '50%', boxShadow: '0 0 30px var(--accent), inset 0 0 10px #fff', position: 'absolute', zIndex: 2 }} />
+          <style>{`
+            @keyframes blob-morph {
+              0% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+              50% { border-radius: 30% 60% 70% 40% / 50% 60% 30% 60%; }
+              100% { border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%; }
+            }
+          `}</style>
+          <div className="zen-orb-core" style={{ width: '80px', height: '80px', background: 'var(--accent)', animation: 'blob-morph 4s ease-in-out infinite', boxShadow: '0 0 30px var(--accent), inset 0 0 15px rgba(255,255,255,0.8)', position: 'absolute', zIndex: 2 }} />
           
           <div className="zen-text-layer" style={{ position: 'absolute', zIndex: 20, textAlign: 'center', pointerEvents: 'none' }}>
             <motion.h3 
