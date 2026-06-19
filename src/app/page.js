@@ -6,6 +6,7 @@ import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, Mes
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import MeditationView from "./components/MeditationView";
 import ResourceView from "./components/ResourceView";
+import JournalView from "./components/JournalView";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
 export default function Dashboard() {
@@ -582,6 +583,8 @@ export default function Dashboard() {
           <MeditationView />
         ) : currentView === "Risorse" ? (
           <ResourceView />
+        ) : currentView === "Diario" ? (
+          <JournalView />
         ) : (
           <div className="placeholder-view">
              <h1>🚧 Lavori in corso</h1>

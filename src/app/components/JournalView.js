@@ -1,0 +1,186 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { MessageSquare, Calendar, Smile, Meh, Frown, CheckCircle2, Briefcase, Sparkles, ChevronDown, Send, ArrowRight } from "lucide-react";
+
+export default function JournalView() {
+  const [selectedDate, setSelectedDate] = useState("2026-06-19");
+  const [inputText, setInputText] = useState("");
+  
+  // Mock Data per la demo della UI
+  const mockDays = [
+    { date: "2026-06-19", label: "Oggi", mood: "great" },
+    { date: "2026-06-18", label: "Ieri", mood: "good" },
+    { date: "2026-06-17", label: "17 Giugno", mood: "bad" },
+    { date: "2026-06-16", label: "16 Giugno", mood: "good" },
+  ];
+
+  const mockJournalData = {
+    "2026-06-19": {
+      summary: "Giornata molto produttiva. Hai lavorato al progetto Friday OS implementando la nuova UI del diario e hai gestito bene le tue priorità. Nel pomeriggio hai avuto una riunione per il flipping immobiliare a Milano.",
+      reflections: [
+        { q: "Cosa è andato bene oggi?", a: "Ho finito la UI del diario e il cliente era molto soddisfatto." },
+        { q: "Cosa potevi fare meglio?", a: "Potevo staccare gli occhi dallo schermo un po' prima." }
+      ],
+      tasks: ["Inviare preventivo idraulico", "Chiamare agenzia per visita immobile"],
+      projects: ["Friday OS", "Flipping Milano Certosa"],
+      tip: "Domani cerca di fare una passeggiata di 20 minuti dopo pranzo per ricaricare le energie e staccare gli occhi dallo schermo. Stai andando alla grande!",
+      chat: [
+        { role: "assistant", text: "Ciao Denis, come è andata la tua giornata?" },
+        { role: "user", text: "Molto bene, ho lavorato al progetto Friday OS e ho fatto una riunione per il flipping a Milano. Però sono un po' stanco." },
+        { role: "assistant", text: "Ottimo lavoro su Friday OS! Ho segnato il progetto Flipping Milano. Ti sei ricordato di chiamare l'agenzia per la visita come avevamo detto stamattina?" },
+        { role: "user", text: "Ah cavolo no, me lo segno per domani. Ah e ricordami di inviare il preventivo all'idraulico." },
+        { role: "assistant", text: "Fatto. Ho aggiunto 'Chiamare agenzia' e 'Inviare preventivo idraulico' alle task di domani. Altro da aggiungere o chiudiamo la giornata?" },
+      ]
+    }
+  };
+
+  const data = mockJournalData[selectedDate] || {
+    summary: "Nessun riassunto ancora disponibile per questa giornata. Raccontami com'è andata!",
+    reflections: [],
+    tasks: [],
+    projects: [],
+    tip: "Raccontami la tua giornata per ricevere un consiglio per domani.",
+    chat: []
+  };
+
+  const messagesEndRef = useRef(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [data.chat]);
+
+  const getMoodIcon = (mood) => {
+    switch (mood) {
+      case "great": return <Smile size={18} style={{ color: "#4ade80" }} />;
+      case "good": return <Smile size={18} style={{ color: "#facc15" }} />;
+      case "bad": return <Frown size={18} style={{ color: "#f87171" }} />;
+      default: return <Meh size={18} style={{ color: "#9ca3af" }} />;
+    }
+  };
+
+  return (
+    <div className="journal-container">
+      {/* Sidebar dei Giorni */}
+      <div className="journal-sidebar">
+        <h2 className="journal-sidebar-title"><Calendar size={18} /> Cronologia</h2>
+        <div className="journal-days-list">
+          {mockDays.map((day) => (
+            <div 
+              key={day.date} 
+              className={`journal-day-item ${selectedDate === day.date ? "active" : ""}`}
+              onClick={() => setSelectedDate(day.date)}
+            >
+              <div className="day-info">
+                <span className="day-label">{day.label}</span>
+                <span className="day-date">{day.date}</span>
+              </div>
+              <div className="day-mood">
+                {getMoodIcon(day.mood)}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Main Day View */}
+      <div className="journal-main">
+        <div className="journal-header">
+          <h1>Diario — {mockDays.find(d => d.date === selectedDate)?.label || selectedDate}</h1>
+          <div className="mood-selector">
+            <button className="mood-btn active"><Smile size={20} /></button>
+            <button className="mood-btn"><Meh size={20} /></button>
+            <button className="mood-btn"><Frown size={20} /></button>
+          </div>
+        </div>
+
+        <div className="journal-bento-grid">
+          
+          {/* Riassunto */}
+          <motion.div className="bento-item journal-summary" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}}>
+            <h3 className="widget-title"><MessageSquare size={16} /> Riassunto della Giornata</h3>
+            <p className="summary-text">{data.summary}</p>
+          </motion.div>
+
+          {/* Riflessioni */}
+          <motion.div className="bento-item journal-reflections" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.1}}>
+            <h3 className="widget-title"><Sparkles size={16} /> Riflessioni</h3>
+            <div className="reflections-list">
+              {data.reflections.length > 0 ? data.reflections.map((r, i) => (
+                <div key={i} className="reflection-item">
+                  <span className="reflection-q">{r.q}</span>
+                  <span className="reflection-a">{r.a}</span>
+                </div>
+              )) : <span className="empty-state">Nessuna riflessione inserita.</span>}
+            </div>
+          </motion.div>
+
+          {/* Deduzioni IA: Task e Progetti */}
+          <motion.div className="bento-item journal-insights" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.2}}>
+            <h3 className="widget-title"><Briefcase size={16} /> Insight di Friday</h3>
+            
+            <div className="insight-section">
+              <span className="insight-label">Task Dedotti</span>
+              {data.tasks.length > 0 ? (
+                <div className="task-list-mini">
+                  {data.tasks.map((t, i) => (
+                    <div key={i} className="task-mini"><CheckCircle2 size={14} style={{ color: "var(--accent)" }} /> {t}</div>
+                  ))}
+                </div>
+              ) : <span className="empty-state">Nessuna task.</span>}
+            </div>
+
+            <div className="insight-section" style={{marginTop: '15px'}}>
+              <span className="insight-label">Progetti Menzionati</span>
+              <div className="project-tags">
+                {data.projects.map((p, i) => (
+                  <span key={i} className="project-tag">{p}</span>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Consiglio per Domani */}
+          <motion.div className="bento-item journal-tip" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.3}}>
+            <h3 className="widget-title"><Sparkles size={16} style={{ color: "var(--accent)" }} /> Consiglio per Domani</h3>
+            <div className="tip-box">
+              <p>{data.tip}</p>
+            </div>
+          </motion.div>
+
+          {/* Chiacchierata / Input */}
+          <motion.div className="bento-item journal-chat" initial={{opacity:0, y:20}} animate={{opacity:1, y:0}} transition={{delay:0.4}}>
+            <h3 className="widget-title">Racconta a Friday</h3>
+            
+            <div className="chat diary-chat">
+              {data.chat.length === 0 && (
+                <div className="empty-state">Scrivi per raccontare la tua giornata. Friday compilerà automaticamente il diario per te.</div>
+              )}
+              {data.chat.map((m, i) => (
+                <div key={i} className={`msg ${m.role}`}>
+                  <span className="msg-label">{m.role === "user" ? "Tu" : "Friday"}</span>
+                  <span style={{whiteSpace: "pre-wrap"}}>{m.text}</span>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="input-bar" style={{marginTop: '10px'}}>
+              <input 
+                className="text-input" 
+                placeholder="Com'è andata oggi?" 
+                value={inputText} 
+                onChange={e => setInputText(e.target.value)} 
+              />
+              <button className="send-btn">
+                <Send size={16} />
+              </button>
+            </div>
+          </motion.div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
