@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic, User } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
@@ -526,7 +526,7 @@ export default function ResourceView({ isMobile }) {
                 {res.tags && res.tags.length > 0 && (
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: 'auto', paddingTop: '8px' }}>
                     {res.tags.slice(0, 3).map(t => (
-                      <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', padding: '4px 8px', background: 'rgba(255,255,255,0.05)', borderRadius: '20px', color: 'rgba(255,255,255,0.7)' }}><Tag size={10} style={{ color: 'var(--accent)' }}/> {t}</span>
+                      <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.7rem', fontWeight: 600, padding: '4px 8px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)' }}><Tag size={10} style={{ color: '#3b82f6' }}/> {t}</span>
                     ))}
                     {res.tags.length > 3 && <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.4)', padding: '4px' }}>+{res.tags.length - 3}</span>}
                   </div>
@@ -977,26 +977,36 @@ export default function ResourceView({ isMobile }) {
                   ) : (
                     chatMessages.map((msg, i) => (
                       <div key={i} className="flex w-full mb-4" style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                        <div className="chat-msg relative" style={{ 
-                          background: msg.role === 'user' ? 'linear-gradient(135deg, rgba(40,40,40,0.8), rgba(20,20,20,0.8))' : 'linear-gradient(135deg, rgba(0,122,255,0.15), rgba(0,80,200,0.1))',
-                          padding: '12px 16px', 
-                          borderRadius: msg.role === 'user' ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                          border: msg.role === 'user' ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(0,122,255,0.2)',
-                          color: msg.role === 'friday' ? '#e2e8f0' : '#ffffff',
-                          fontSize: '0.9rem', lineHeight: 1.6,
-                          maxWidth: '90%',
-                          boxShadow: msg.role === 'friday' ? '0 4px 20px rgba(0,122,255,0.05)' : '0 4px 20px rgba(0,0,0,0.2)',
-                          backdropFilter: 'blur(10px)'
+                        <div className={`msg ${msg.role === 'user' ? 'user' : 'assistant'}`} style={{ 
+                          position: 'relative',
+                          background: msg.role === 'user' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 150, 255, 0.05)',
+                          border: msg.role === 'user' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 150, 255, 0.2)',
+                          padding: '16px 20px', 
+                          borderRadius: '20px',
+                          borderTopRightRadius: msg.role === 'user' ? '4px' : '20px',
+                          borderTopLeftRadius: msg.role !== 'user' ? '4px' : '20px',
+                          color: '#fff',
+                          fontSize: '0.95rem', lineHeight: 1.6,
+                          maxWidth: '85%',
+                          boxShadow: msg.role === 'user' ? '0 4px 15px rgba(0,0,0,0.2)' : '0 4px 15px rgba(0,150,255,0.1)',
+                          backdropFilter: 'blur(10px)',
+                          WebkitBackdropFilter: 'blur(10px)'
                         }}>
-                          {msg.role === 'friday' && <div className="absolute -top-2 -left-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center shadow-[0_0_10px_rgba(59,130,246,0.8)]"><span className="text-[10px] font-bold text-white">F</span></div>}
-                          {msg.text}
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span className="msg-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: msg.role === 'user' ? 'rgba(255,255,255,0.6)' : '#60a5fa' }}>
+                              {msg.role === "user" ? <User size={12} /> : <BrainCircuit size={12} />}
+                              {msg.role === "user" ? "Tu" : "Friday"}
+                            </span>
+                            {msg.timestamp && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>{msg.timestamp}</span>}
+                          </div>
+                          <div className="prose markdown-body" style={{ color: '#fff', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: msg.text ? msg.text.replace(/\n/g, '<br/>') : '' }} />
                         </div>
                       </div>
                     ))
                   )}
                   {isChatting && (
                     <div className="flex w-full mb-4" style={{ justifyContent: 'flex-start' }}>
-                      <div className="chat-msg relative flex items-center justify-center" style={{ padding: '12px 16px', borderRadius: '20px 20px 20px 4px', background: 'linear-gradient(135deg, rgba(0,122,255,0.1), rgba(0,80,200,0.05))', border: '1px solid rgba(0,122,255,0.1)', color: '#5e9cff' }}>
+                      <div className="msg assistant" style={{ position: 'relative', padding: '16px 20px', borderRadius: '20px', borderTopLeftRadius: '4px', background: 'rgba(0, 150, 255, 0.05)', border: '1px solid rgba(0, 150, 255, 0.2)', color: '#5e9cff', display: 'flex', alignItems: 'center' }}>
                         <Loader2 size={16} className="spinner animate-spin" />
                         <span className="ml-2 text-xs font-medium opacity-70">Analizzando ({chatContext})...</span>
                       </div>
