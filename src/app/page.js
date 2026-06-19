@@ -494,6 +494,15 @@ export default function Dashboard() {
               onClick={handleOrbClick}
               style={mode === "recording" ? { transform: `scale(${1 + audioLevel * 0.2})` } : {}}
             />
+            {mode === "recording" && (
+              <div className="audio-visualizer" style={{ position: 'absolute', bottom: '-20px' }}>
+                <div className="audio-bar" style={{ animationDelay: '0.1s' }} />
+                <div className="audio-bar" style={{ animationDelay: '0.3s', height: '35px' }} />
+                <div className="audio-bar" style={{ animationDelay: '0.2s', height: '25px' }} />
+                <div className="audio-bar" style={{ animationDelay: '0.4s', height: '30px' }} />
+                <div className="audio-bar" style={{ animationDelay: '0.1s', height: '20px' }} />
+              </div>
+            )}
           </div>
 
           <div className="status-text">

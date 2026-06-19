@@ -81,33 +81,40 @@ html, body {
   flex-direction: row;
   align-items: center;
   gap: 14px;
-  color: var(--fg-muted);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   font-size: 0.95rem;
   font-weight: 500;
   padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid transparent;
+  border-radius: 12px;
+  border-left: 3px solid transparent;
   width: 100%;
 }
 
 .nav-item:hover {
   background: rgba(255,255,255,0.05);
   color: var(--fg);
+  transform: translateX(4px);
 }
 
 .nav-item.active {
-  background: rgba(100, 180, 255, 0.1);
-  border-color: rgba(100, 180, 255, 0.2);
+  background: linear-gradient(90deg, rgba(0, 150, 255, 0.15) 0%, transparent 100%);
+  border-left: 3px solid var(--accent);
+  color: #fff;
+  text-shadow: 0 0 10px rgba(0, 150, 255, 0.5);
+}
+
+.nav-item.active .nav-icon-box {
   color: var(--accent);
-  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  filter: drop-shadow(0 0 8px var(--accent));
 }
 
 .nav-icon-box {
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.3s ease;
 }
 
 .dashboard {
@@ -541,36 +548,60 @@ html, body {
 }
 
 /* Tasks */
-.task-list { overflow-y: auto; display: flex; flex-direction: column; gap: 8px; flex-grow: 1; }
+.task-list { overflow-y: auto; display: flex; flex-direction: column; gap: 10px; flex-grow: 1; padding-right: 5px; }
 .task {
-  display: flex; align-items: flex-start; gap: 12px;
-  font-size: 0.9rem; line-height: 1.4; padding: 10px 12px;
-  background: rgba(255,255,255,0.03); border-radius: 12px;
-  transition: all 0.2s;
+  display: flex; align-items: flex-start; gap: 14px;
+  font-size: 0.95rem; line-height: 1.5; padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
 }
-.task:hover { background: rgba(255,255,255,0.06); }
-.task.done { opacity: 0.4; }
+.task:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+}
+.task.done { opacity: 0.3; transform: none; box-shadow: none; }
 .task.done span { text-decoration: line-through; }
 .empty-state { flex-grow: 1; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 0.9rem; font-style: italic; }
 
 /* Chat / Inbox */
-.chat { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding-bottom: 12px; }
+.chat { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; padding-right: 5px; }
 .scroll-bottom-btn:hover { background: rgba(255,255,255,0.2) !important; }
-.msg { padding: 12px 16px; border-radius: 16px; max-width: 90%; font-size: 0.9rem; line-height: 1.5; }
-.msg.user { background: var(--accent); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
-.msg.assistant { background: rgba(255,255,255,0.1); color: var(--fg); align-self: flex-start; border-bottom-left-radius: 4px; }
-.msg-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,0.5); margin-bottom: 4px; display: block; }
+.msg { padding: 14px 18px; border-radius: 20px; max-width: 85%; font-size: 0.95rem; line-height: 1.5; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+.msg.user {
+  background: linear-gradient(135deg, #007aff, #004fb0);
+  color: white; align-self: flex-end; border-bottom-right-radius: 4px;
+}
+.msg.assistant {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--fg); align-self: flex-start; border-bottom-left-radius: 4px;
+}
+.msg-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1.5px; color: rgba(255,255,255,0.6); margin-bottom: 6px; display: block; font-weight: 600; }
 
 /* Input Bar */
 .input-bar {
   display: flex; align-items: center; gap: 12px; flex-shrink: 0;
-  background: rgba(0,0,0,0.4); border: 1px solid var(--border);
-  border-radius: 20px; padding: 8px 8px 8px 16px;
-  transition: border-color 0.3s;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 24px; padding: 10px 10px 10px 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
 }
-.input-bar:focus-within { border-color: var(--accent-border); }
-.text-input { flex-grow: 1; background: transparent; border: none; color: var(--fg); font-size: 0.95rem; outline: none; }
+.input-bar:focus-within {
+  border-color: rgba(0, 122, 255, 0.6);
+  box-shadow: 0 4px 25px rgba(0, 122, 255, 0.2);
+}
+.text-input { flex-grow: 1; background: transparent; border: none; color: var(--fg); font-size: 1rem; outline: none; }
 .text-input::placeholder { color: var(--fg-muted); }
+.send-btn { background: var(--accent); color: white; border: none; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+.send-btn:hover { background: #3b82f6; transform: scale(1.05); }
 .icon-btn { background: none; border: none; color: var(--fg-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: 0.2s; }
 .icon-btn:hover { color: var(--fg); background: rgba(255,255,255,0.1); }
 .chat-loading { display: flex; align-items: center; justify-content: flex-start; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 12px; margin-top: auto; }
@@ -794,6 +825,27 @@ html, body {
 
 .orb-rings { position: absolute; inset: -30px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.03); pointer-events: none;}
 .orb-rings::before { content: ''; position: absolute; inset: -20px; border-radius: 50%; border: 1px dashed rgba(255,255,255,0.06); animation: spinRing 40s linear infinite; }
+
+/* Audio Visualizer */
+.audio-visualizer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 40px;
+  margin-top: 15px;
+}
+.audio-bar {
+  width: 4px;
+  background: var(--accent);
+  border-radius: 4px;
+  animation: soundWave 0.5s infinite ease-in-out alternate;
+  box-shadow: 0 0 8px var(--accent);
+}
+@keyframes soundWave {
+  0% { height: 6px; opacity: 0.5; }
+  100% { height: 35px; opacity: 1; }
+}
 @keyframes spinRing { to { transform: rotate(360deg); } }
 
 .status-text { font-size: 0.9rem; color: var(--fg-dim); letter-spacing: 1px; display: flex; align-items: center; gap: 8px; height: 24px;}
