@@ -89,6 +89,7 @@ export default function Dashboard() {
   const [inputText, setInputText] = useState("");
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  const waveContainerRef = useRef(null);
   const [wakeEnabled, setWakeEnabled] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [wakeHeard, setWakeHeard] = useState("");
@@ -302,6 +303,7 @@ export default function Dashboard() {
   }
 
   async function startRec() {
+    setMode("recording"); // Feedback visivo immediato
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -344,13 +346,23 @@ export default function Dashboard() {
       }
 
       function tick() {
+        if (!audioCtxRef.current) return;
         analyser.getByteFrequencyData(buf);
         const avg = buf.reduce((a, b) => a + b, 0) / buf.length;
-        setAudioLevel(Math.min(avg / 100, 1));
+        const normalizedLevel = avg / 255;
         
-        // Logica Auto-Stop
+        // Aggiorna le barre direttamente in vanilla JS per non re-renderizzare tutto
+        if (waveContainerRef.current) {
+          const bars = waveContainerRef.current.children;
+          for (let i = 0; i < bars.length; i++) {
+            const dist = Math.abs(i - 12);
+            const h = 10 + (normalizedLevel * Math.max(0, 15 - dist) * 20);
+            bars[i].style.height = `${h}px`;
+          }
+        }
+        
         const now = Date.now();
-        if (avg > 10) {
+        if (normalizedLevel > 0.05) {
             hasSpoken = true;
             silenceStart = 0;
         } else if (hasSpoken) {
@@ -379,7 +391,10 @@ export default function Dashboard() {
         cancelAnimationFrame(animFrameRef.current);
         ctx.close().catch(() => {});
         stream.getTracks().forEach(t => t.stop());
-        setAudioLevel(0);
+        if (waveContainerRef.current) {
+          const bars = waveContainerRef.current.children;
+          for (let i = 0; i < bars.length; i++) bars[i].style.height = `10px`;
+        }
         if (recognition) { try { recognition.stop(); } catch(e) {} }
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         const finalRecordedText = (currentTranscript + " " + lastInterimTranscript).trim();
@@ -390,7 +405,6 @@ export default function Dashboard() {
 
       rec.start();
       mediaRecorderRef.current = rec;
-      setMode("recording");
       setRecordingTime(0);
       timerRef.current = setInterval(() => setRecordingTime(t => t + 1), 1000);
     } catch (err) {
@@ -708,33 +722,18 @@ export default function Dashboard() {
                 </div>
 
                 <div 
-                  className={`siri-wave-container ${mode}`} 
+                  className={`siri-wave-container ${mode === 'recording' ? 'active' : ''}`}
+                  ref={waveContainerRef}
                   onClick={handleOrbClick}
                 >
                   <div className="siri-wave-bg" />
-                  {Array.from({length: 25}).map((_, i) => {
-                    const mid = 12;
-                    const dist = Math.abs(i - mid);
-                    const isRecording = mode === "recording";
-                    
-                    // Base heights
-                    let h = 10;
-                    if (isRecording) {
-                      // Reactive to microphone
-                      h = 10 + (audioLevel * Math.max(0, 15 - dist) * 20); // increased multiplier
-                    }
-                    
-                    return (
+                  {Array.from({length: 25}).map((_, i) => (
                       <div 
                         key={i} 
                         className="siri-wave-bar" 
-                        style={{ 
-                          '--dist': dist,
-                          height: isRecording ? `${h}px` : undefined
-                        }} 
+                        style={{ '--dist': Math.abs(i - 12), height: '10px' }} 
                       />
-                    );
-                  })}
+                  ))}
                 </div>
                 {wakeHeard && (
                   <div style={{ position: 'absolute', top: '24px', left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.5)', padding: '4px 12px', borderRadius: '12px', fontSize: '0.75rem', backdropFilter: 'blur(10px)', color: 'var(--accent)', zIndex: 100 }}>
