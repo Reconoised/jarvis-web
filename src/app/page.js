@@ -89,7 +89,7 @@ export default function Dashboard() {
   const [wakeEnabled, setWakeEnabled] = useState(false);
   const [ttsEnabled, setTtsEnabled] = useState(true);
   const [wakeHeard, setWakeHeard] = useState("");
-
+  const [liveTranscript, setLiveTranscript] = useState("");
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const messagesEndRef = useRef(null);
@@ -249,7 +249,9 @@ export default function Dashboard() {
       const recStart = Date.now();
       
       let currentTranscript = "";
+      let lastInterimTranscript = "";
       let recognition = null;
+      setLiveTranscript("");
       if (window.SpeechRecognition || window.webkitSpeechRecognition) {
         recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
         recognition.continuous = true;
@@ -257,10 +259,14 @@ export default function Dashboard() {
         recognition.lang = "it-IT";
         recognition.onresult = (e) => {
           let finalTrans = "";
+          let interimTrans = "";
           for (let i = e.resultIndex; i < e.results.length; ++i) {
             if (e.results[i].isFinal) finalTrans += e.results[i][0].transcript + " ";
+            else interimTrans += e.results[i][0].transcript + " ";
           }
           if (finalTrans) currentTranscript += finalTrans;
+          lastInterimTranscript = interimTrans;
+          setLiveTranscript(currentTranscript + interimTrans);
         };
         try { recognition.start(); } catch(e) {}
       }
@@ -304,7 +310,9 @@ export default function Dashboard() {
         setAudioLevel(0);
         if (recognition) { try { recognition.stop(); } catch(e) {} }
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (blob.size > 1000) sendAudio(blob, currentTranscript.trim());
+        const finalRecordedText = (currentTranscript + " " + lastInterimTranscript).trim();
+        setLiveTranscript("");
+        if (blob.size > 1000) sendAudio(blob, finalRecordedText);
         else { setMode("idle"); restartWake(); }
       };
 
@@ -691,10 +699,11 @@ export default function Dashboard() {
                     onClick={scrollToBottom}
                     className="scroll-bottom-btn"
                     style={{
-                      position: 'absolute', bottom: '80px', right: '20px', 
+                      position: 'absolute', bottom: '90px', right: '30px', 
                       background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
                       borderRadius: '50%', padding: '10px', color: '#fff', cursor: 'pointer',
-                      backdropFilter: 'blur(10px)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      backdropFilter: 'blur(10px)', zIndex: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 4px 15px rgba(0,0,0,0.3)'
                     }}
                   >
                     <ChevronDown size={20} />
@@ -702,10 +711,24 @@ export default function Dashboard() {
                 )}
               </div>
 
+              {liveTranscript && (
+                <div style={{ padding: '8px 16px', background: 'rgba(0,180,255,0.1)', borderRadius: '12px', border: '1px solid rgba(0,180,255,0.3)', marginBottom: '12px', fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)', fontStyle: 'italic', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+                  <Mic size={14} color="#00b4ff" style={{ animation: 'pulse 1.5s infinite' }} />
+                  {liveTranscript}
+                </div>
+              )}
+
               {/* Input Bar */}
               <div className="input-bar">
                 <input type="file" ref={fileInputRef} onChange={handleFileUpload} style={{display:"none"}} accept=".txt,.md,.pdf,.csv,.json" />
                 <button className="icon-btn" onClick={() => fileInputRef.current?.click()}><Paperclip size={18} /></button>
+                <button 
+                  className="icon-btn" 
+                  onClick={handleOrbClick}
+                  style={{ color: mode === 'recording' ? '#ff3366' : 'rgba(255,255,255,0.6)' }}
+                >
+                  <Mic size={18} />
+                </button>
                 <input 
                   className="text-input" 
                   placeholder="Scrivi a Friday..." 
