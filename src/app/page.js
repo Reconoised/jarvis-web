@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen } from "lucide-react";
+import { Mic, Send, Paperclip, CheckCircle2, Circle, ListTodo, BrainCircuit, MessageSquare, MicOff, Book, GitGraph, BookOpen, Compass, Target, Briefcase, Calendar, ChevronDown, PanelRightClose, PanelRightOpen, Volume2, VolumeX } from "lucide-react";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import MeditationView from "./components/MeditationView";
 import ResourceView from "./components/ResourceView";
@@ -19,6 +19,7 @@ export default function Dashboard() {
   const [recordingTime, setRecordingTime] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [wakeEnabled, setWakeEnabled] = useState(false);
+  const [ttsEnabled, setTtsEnabled] = useState(true);
   const [wakeHeard, setWakeHeard] = useState("");
 
   const mediaRecorderRef = useRef(null);
@@ -269,7 +270,11 @@ export default function Dashboard() {
           }
         }
         setMessages(prev => [...prev, { role: "assistant", text: text }]);
-        speakNeural(text);
+        if (ttsEnabled) {
+          speakNeural(text);
+        } else {
+          setMode("idle"); restartWake();
+        }
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
         setMode("idle"); restartWake();
@@ -312,7 +317,11 @@ export default function Dashboard() {
           }
         }
         setMessages(prev => [...prev, { role: "assistant", text: text }]);
-        speakNeural(text);
+        if (ttsEnabled) {
+          speakNeural(text);
+        } else {
+          setMode("idle"); restartWake();
+        }
       } else {
         setMessages(prev => [...prev, { role: "assistant", text: "Errore: " + (data.error || "risposta vuota") }]);
         setMode("idle"); restartWake();
@@ -485,6 +494,25 @@ export default function Dashboard() {
               
               {/* Friday Core Header */}
               <div className="core-header">
+                <div className="core-controls">
+                  <div className="status-text">
+                    {mode === "recording" && <span className="rec-dot" />}
+                    {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
+                    {STATUS[mode]}
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px' }}>
+                    <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
+                      {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
+                      {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
+                    </button>
+                    <button className={`wake-btn ${ttsEnabled ? "active" : ""}`} onClick={() => setTtsEnabled(!ttsEnabled)}>
+                      {ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                      {ttsEnabled ? "Voice: ON" : "Voice: OFF"}
+                    </button>
+                  </div>
+                  {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
+                </div>
+
                 <div className="orb-container">
                   <div className="orb-rings" />
                   <div 
@@ -503,19 +531,6 @@ export default function Dashboard() {
                       ))}
                     </div>
                   )}
-                </div>
-
-                <div className="core-controls">
-                  <div className="status-text">
-                    {mode === "recording" && <span className="rec-dot" />}
-                    {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
-                    {STATUS[mode]}
-                  </div>
-                  <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
-                    {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
-                    {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
-                  </button>
-                  {wakeHeard && <div className="wake-debug">🎧 {wakeHeard}</div>}
                 </div>
               </div>
 

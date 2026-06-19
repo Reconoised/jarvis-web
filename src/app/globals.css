@@ -557,7 +557,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  margin-top: -20px;
+  margin-bottom: 24px;
 }
 
 /* Chat con Fade-Out in alto */
