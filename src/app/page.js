@@ -9,6 +9,50 @@ import ResourceView from "./components/ResourceView";
 import JournalView from "./components/JournalView";
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
+const CustomAudioPlayer = ({ url }) => {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const updateProgress = () => setProgress((audio.currentTime / audio.duration) * 100);
+    const handleEnd = () => { setPlaying(false); setProgress(0); };
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('ended', handleEnd);
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('ended', handleEnd);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else audioRef.current.play();
+    setPlaying(!playing);
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'rgba(255,255,255,0.1)', padding: '8px 12px', borderRadius: '20px', border: '1px solid rgba(255,255,255,0.1)' }}>
+      <audio ref={audioRef} src={url} />
+      <button onClick={togglePlay} style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#000' }}>
+        {playing ? "⏸" : "▶"}
+      </button>
+      <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.2)', borderRadius: '2px', overflow: 'hidden', cursor: 'pointer' }} onClick={(e) => {
+         const rect = e.currentTarget.getBoundingClientRect();
+         const perc = (e.clientX - rect.left) / rect.width;
+         if (audioRef.current && audioRef.current.duration) {
+            audioRef.current.currentTime = perc * audioRef.current.duration;
+            setProgress(perc * 100);
+         }
+      }}>
+        <div style={{ width: `${progress}%`, height: '100%', background: 'var(--accent)', transition: 'width 0.1s linear' }} />
+      </div>
+    </div>
+  );
+};
 export default function Dashboard() {
   const [currentView, setCurrentView] = useState("OS"); // OS | Meditazione | Risorse | Manuali | Grafo | Diario | Progetti | Obiettivi
   const [isFocusOpen, setIsFocusOpen] = useState(true);
@@ -179,6 +223,23 @@ export default function Dashboard() {
       const MAX_RECORDING_MS = 60000; // max 60s
       const SILENCE_THRESHOLD_MS = 3000; // 3 secondi di silenzio chiudono
       const recStart = Date.now();
+      
+      let currentTranscript = "";
+      let recognition = null;
+      if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+        recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = "it-IT";
+        recognition.onresult = (e) => {
+          let finalTrans = "";
+          for (let i = e.resultIndex; i < e.results.length; ++i) {
+            if (e.results[i].isFinal) finalTrans += e.results[i][0].transcript + " ";
+          }
+          if (finalTrans) currentTranscript += finalTrans;
+        };
+        try { recognition.start(); } catch(e) {}
+      }
 
       function tick() {
         analyser.getByteFrequencyData(buf);
@@ -217,8 +278,9 @@ export default function Dashboard() {
         ctx.close().catch(() => {});
         stream.getTracks().forEach(t => t.stop());
         setAudioLevel(0);
+        if (recognition) { try { recognition.stop(); } catch(e) {} }
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        if (blob.size > 1000) sendAudio(blob);
+        if (blob.size > 1000) sendAudio(blob, currentTranscript.trim());
         else { setMode("idle"); restartWake(); }
       };
 
@@ -241,20 +303,21 @@ export default function Dashboard() {
     }
   }
 
-  async function sendAudio(blob) {
+  async function sendAudio(blob, localTranscript = "") {
     setMode("thinking");
     const audioUrl = URL.createObjectURL(blob);
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const msgId = Date.now();
-    setMessages(prev => [...prev, { id: msgId, role: "user", text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, timestamp }]);
+    setMessages(prev => [...prev, { id: msgId, role: "user", text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, transcript: localTranscript || undefined, timestamp }]);
     try {
       const fd = new FormData();
       fd.append("audio", blob, "rec.webm");
       const res = await fetch(`${BACKEND_URL}/api/jarvis/voice`, { method: "POST", body: fd });
       const data = await res.json();
       
-      if (data.transcript) {
-        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, transcript: data.transcript } : m));
+      const finalTranscript = data.transcript || localTranscript;
+      if (finalTranscript) {
+        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, transcript: finalTranscript } : m));
       }
 
       if (data.response) {
@@ -580,7 +643,7 @@ export default function Dashboard() {
                         
                         {m.isAudio ? (
                           <div style={{ marginTop: '4px' }}>
-                            <audio src={m.audioUrl} controls style={{ height: '32px', width: '100%', outline: 'none', borderRadius: '16px', filter: 'invert(1) hue-rotate(180deg)' }} />
+                            <CustomAudioPlayer url={m.audioUrl} />
                             {m.transcript && (
                               <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>
                                 "{m.transcript}"
