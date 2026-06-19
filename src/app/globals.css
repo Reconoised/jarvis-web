@@ -577,13 +577,15 @@ html, body {
 .right-panel {
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(10, 10, 15, 0.4);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255,255,255,0.08);
   border-radius: 24px;
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   flex-shrink: 0;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
 }
 .right-panel.open {
   width: 320px;
@@ -596,7 +598,7 @@ html, body {
   cursor: pointer;
 }
 .right-panel.closed:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255,255,255,0.08);
 }
 
 .right-panel-header {
@@ -612,8 +614,8 @@ html, body {
 }
 
 .toggle-panel-btn {
-  background: none;
-  border: none;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
   color: var(--fg-muted);
   cursor: pointer;
   display: flex;
@@ -621,11 +623,14 @@ html, body {
   justify-content: center;
   padding: 8px;
   border-radius: 50%;
-  transition: 0.2s;
+  transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .toggle-panel-btn:hover {
   color: var(--fg);
   background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
 }
 
 .right-panel-content {
@@ -637,13 +642,13 @@ html, body {
 
 /* Micro-Cards per Focus */
 .task-list.micro {
-  gap: 8px;
+  gap: 12px;
 }
 .task.micro-task {
-  padding: 10px 12px;
-  gap: 10px;
-  font-size: 0.85rem;
-  border-radius: 12px;
+  padding: 12px 14px;
+  gap: 12px;
+  font-size: 0.9rem;
+  border-radius: 16px;
 }
 
 @media (max-width: 1024px) {
@@ -679,20 +684,25 @@ html, body {
 .task {
   display: flex; align-items: flex-start; gap: 14px;
   font-size: 0.95rem; line-height: 1.5; padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: linear-gradient(145deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);
+  cursor: pointer;
 }
 .task:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.15);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 25px rgba(0,0,0,0.2);
+  background: linear-gradient(145deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1);
 }
-.task.done { opacity: 0.3; transform: none; box-shadow: none; }
-.task.done span { text-decoration: line-through; }
+.task.done { opacity: 0.4; transform: none; box-shadow: none; background: rgba(0,0,0,0.2); border-color: transparent; }
+.task.done span { text-decoration: line-through; color: var(--fg-muted); }
+.task .dot { color: rgba(255,255,255,0.4); transition: all 0.3s; flex-shrink: 0; }
+.task:hover .dot { color: var(--accent); filter: drop-shadow(0 0 5px var(--accent)); }
+.task.done .dot.checked { color: #34d399; filter: drop-shadow(0 0 5px #34d399); }
+.empty-state { flex-grow: 1; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 0.9rem; font-style: italic; }
 .empty-state { flex-grow: 1; display: flex; align-items: center; justify-content: center; color: var(--fg-muted); font-size: 0.9rem; font-style: italic; }
 
 /* Chat / Inbox */
