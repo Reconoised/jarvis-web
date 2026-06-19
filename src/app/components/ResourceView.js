@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
@@ -217,6 +217,41 @@ export default function ResourceView({ isMobile }) {
   const [chatMessages, setChatMessages] = useState([]);
   const [isChatting, setIsChatting] = useState(false);
 
+  const [isRecordingDictation, setIsRecordingDictation] = useState(false);
+
+  const startVoiceDictation = () => {
+    if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
+      alert("Il tuo browser non supporta la dettatura vocale.");
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+    recognition.lang = 'it-IT';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onstart = () => {
+      setIsRecordingDictation(true);
+    };
+
+    recognition.onresult = (event) => {
+      const transcript = event.results[0][0].transcript;
+      setChatInput(prev => (prev + " " + transcript).trim());
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Errore riconoscimento vocale:", event.error);
+      setIsRecordingDictation(false);
+    };
+
+    recognition.onend = () => {
+      setIsRecordingDictation(false);
+    };
+
+    recognition.start();
+  };
+
   const handleSendChat = async () => {
     if (!chatInput.trim() || !selectedResource) return;
     const userMsg = chatInput.trim();
@@ -398,14 +433,14 @@ export default function ResourceView({ isMobile }) {
         <div className="library-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
           <h3 style={{ margin: 0, fontSize: '1.4rem', fontWeight: 600, color: '#fff' }}>Libreria Salvata</h3>
           <div className="library-controls" style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
-            <div className="search-box" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '8px 16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+            <div className="search-box" style={{ display: 'flex', alignItems: 'center', background: 'rgba(0,0,0,0.4)', borderRadius: '20px', padding: '8px 16px', border: '1px solid rgba(255,255,255,0.05)', minWidth: '350px' }}>
               <Search size={16} style={{ color: 'rgba(255,255,255,0.5)' }} />
               <input 
                 type="text" 
                 placeholder="Cerca risorse o tag..." 
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                style={{ background: 'transparent', border: 'none', color: '#fff', marginLeft: '8px', outline: 'none', fontSize: '0.9rem' }}
+                style={{ background: 'transparent', border: 'none', color: '#fff', marginLeft: '8px', outline: 'none', fontSize: '0.9rem', width: '100%' }}
               />
             </div>
             
@@ -606,8 +641,8 @@ export default function ResourceView({ isMobile }) {
                   <div className="flex items-center flex-wrap gap-2 text-sm">
                     {selectedResource.tags && selectedResource.tags.length > 0 ? (
                       selectedResource.tags.map(t => (
-                        <span key={t} className="flex items-center gap-1 px-3 py-1 bg-white/5 border border-white/10 rounded-full text-white/70 text-xs font-medium">
-                          <Tag size={12} className="text-blue-400" />
+                        <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)' }}>
+                          <Tag size={12} style={{ color: '#3b82f6' }} />
                           {t}
                         </span>
                       ))
@@ -990,8 +1025,16 @@ export default function ResourceView({ isMobile }) {
                       disabled={isChatting}
                     />
                     <button 
+                      onClick={isRecordingDictation ? () => {} : startVoiceDictation} 
+                      title="Dettatura Vocale"
+                      style={{ background: isRecordingDictation ? 'rgba(239,68,68,0.2)' : 'transparent', color: isRecordingDictation ? '#ef4444' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
+                    >
+                      <Mic size={16} className={isRecordingDictation ? "animate-pulse" : ""} />
+                    </button>
+                    <button 
                       onClick={handleSendChat} 
                       disabled={isChatting || !chatInput.trim()}
+                      style={{ marginLeft: '4px' }}
                     >
                       <Send size={14} />
                     </button>
