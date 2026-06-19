@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic, User } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
+
+const EMPTY_ARRAY = [];
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
 
@@ -240,55 +242,99 @@ export default function ResourceView({ isMobile }) {
     });
   };
 
-  const chatMessages = selectedResource ? (resourceChats[selectedResource.id] || []) : [];
+  const chatMessages = selectedResource ? (resourceChats[selectedResource.id] || EMPTY_ARRAY) : EMPTY_ARRAY;
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
   const [isRecordingDictation, setIsRecordingDictation] = useState(false);
+  const dictationRecRef = useRef(null);
+  const dictationStreamRef = useRef(null);
+  const dictationTextRef = useRef("");
 
-  const startVoiceDictation = () => {
+  const stopVoiceDictation = (shouldSend = false) => {
+    if (dictationRecRef.current) {
+      try { dictationRecRef.current.stop(); } catch(e) {}
+      dictationRecRef.current = null;
+    }
+    if (dictationStreamRef.current) {
+      dictationStreamRef.current.getTracks().forEach(t => t.stop());
+      dictationStreamRef.current = null;
+    }
+    setIsRecordingDictation(false);
+
+    if (shouldSend && dictationTextRef.current) {
+      handleSendChat(dictationTextRef.current);
+      dictationTextRef.current = "";
+    }
+  };
+
+  const startVoiceDictation = async () => {
     if (!('SpeechRecognition' in window) && !('webkitSpeechRecognition' in window)) {
       alert("Il tuo browser non supporta la dettatura vocale.");
       return;
     }
 
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'it-IT';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      dictationStreamRef.current = stream;
 
-    recognition.onstart = () => {
-      setIsRecordingDictation(true);
-    };
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognition = new SpeechRecognition();
+      dictationRecRef.current = recognition;
 
-    recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript;
-      setChatInput(prev => (prev + " " + transcript).trim());
-    };
+      recognition.lang = 'it-IT';
+      recognition.continuous = true;
+      recognition.interimResults = true;
 
-    recognition.onerror = (event) => {
-      console.error("Errore riconoscimento vocale:", event.error);
-      if (event.error === 'network') {
-        alert("Errore di rete del microfono. Il tuo browser o la tua connessione sta bloccando i server di riconoscimento vocale. Prova a usare Chrome o controlla le impostazioni di sicurezza.");
-      } else if (event.error !== 'no-speech') {
-        alert("Errore microfono: " + event.error);
-      }
-      setIsRecordingDictation(false);
-    };
+      let currentBaseInput = chatInput;
+      dictationTextRef.current = chatInput;
 
-    recognition.onend = () => {
-      setIsRecordingDictation(false);
-    };
+      recognition.onstart = () => {
+        setIsRecordingDictation(true);
+      };
 
-    recognition.start();
+      recognition.onresult = (event) => {
+        let finalTrans = "";
+        let interimTrans = "";
+        for (let i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) finalTrans += event.results[i][0].transcript + " ";
+          else interimTrans += event.results[i][0].transcript + " ";
+        }
+        
+        if (finalTrans) {
+          currentBaseInput = (currentBaseInput + " " + finalTrans).trim();
+        }
+        
+        const fullText = (currentBaseInput + " " + interimTrans).trim();
+        dictationTextRef.current = fullText;
+        setChatInput(fullText);
+      };
+
+      recognition.onerror = (event) => {
+        console.error("Errore riconoscimento vocale:", event.error);
+        stopVoiceDictation(false);
+        if (event.error === 'network') {
+          alert("Errore di rete del microfono. Prova a ricaricare o controllare i permessi.");
+        }
+      };
+
+      recognition.onend = () => {
+        stopVoiceDictation(true);
+      };
+
+      recognition.start();
+    } catch (e) {
+      console.error("Accesso microfono negato", e);
+      alert("Permesso microfono negato.");
+    }
   };
 
-  const handleSendChat = async () => {
-    if (!chatInput.trim() || !selectedResource) return;
-    const userMsg = chatInput.trim();
+  const handleSendChat = async (textOverride = null) => {
+    const textToSend = typeof textOverride === 'string' ? textOverride : chatInput;
+    if (!textToSend.trim() || !selectedResource) return;
+    const userMsg = textToSend.trim();
     updateChatMessages(selectedResource.id, prev => [...prev, { role: "user", text: userMsg }]);
     setChatInput("");
     setIsChatting(true);
@@ -673,7 +719,7 @@ export default function ResourceView({ isMobile }) {
                   <div className="flex items-center flex-wrap gap-2 text-sm">
                     {selectedResource.tags && (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).length > 0 ? (
                       (Array.isArray(selectedResource.tags) ? selectedResource.tags : selectedResource.tags.split(',')).map(t => (
-                        <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap' }}>
+                        <span key={t.trim()} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: 600, padding: '6px 12px', background: 'rgba(59,130,246,0.1)', borderRadius: '20px', color: '#60a5fa', border: '1px solid rgba(59,130,246,0.2)', boxShadow: '0 0 10px rgba(59,130,246,0.1)', backdropFilter: 'blur(10px)', whiteSpace: 'nowrap', marginRight: '12px', marginBottom: '8px' }}>
                           <Tag size={12} style={{ color: '#3b82f6' }} />
                           {t.trim()}
                         </span>
@@ -1069,8 +1115,8 @@ export default function ResourceView({ isMobile }) {
                     />
                     <button 
                       type="button"
-                      onClick={isRecordingDictation ? () => {} : startVoiceDictation} 
-                      title="Dettatura Vocale"
+                      onClick={isRecordingDictation ? () => stopVoiceDictation(true) : startVoiceDictation} 
+                      title={isRecordingDictation ? "Ferma e Invia" : "Dettatura Vocale"}
                       style={{ background: isRecordingDictation ? 'rgba(239,68,68,0.2)' : 'transparent', color: isRecordingDictation ? '#ef4444' : 'rgba(255,255,255,0.5)', border: 'none', cursor: 'pointer', padding: '8px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}
                     >
                       <Mic size={16} className={isRecordingDictation ? "animate-pulse" : ""} />
