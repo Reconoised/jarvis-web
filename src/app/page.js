@@ -722,7 +722,7 @@ export default function Dashboard() {
                 </div>
 
                 <div 
-                  className={`siri-wave-container ${mode === 'recording' ? 'active' : ''}`}
+                  className={`siri-wave-container ${mode}`}
                   ref={waveContainerRef}
                   onClick={handleOrbClick}
                 >
