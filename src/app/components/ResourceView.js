@@ -284,26 +284,8 @@ export default function ResourceView({ isMobile }) {
         }
 
         const blob = new Blob(dictationChunksRef.current, { type: "audio/webm" });
-        if (blob.size > 500) {
-          try {
-            const fd = new FormData();
-            fd.append("audio", blob, "dictation.webm");
-            const res = await fetch(`${BACKEND_URL}/api/wake-check`, { method: "POST", body: fd });
-            const data = await res.json();
-            
-            if (data.transcript) {
-              const newText = data.transcript.trim();
-              const fullText = (chatInput + " " + newText).trim();
-              setChatInput(fullText);
-              
-              if (rec.shouldSend) {
-                handleSendChat(fullText);
-                setChatInput("");
-              }
-            }
-          } catch(e) {
-            console.error("Errore trascrizione audio:", e);
-          }
+        if (blob.size > 500 && rec.shouldSend) {
+          sendResourceAudio(blob);
         }
       };
 
@@ -312,6 +294,54 @@ export default function ResourceView({ isMobile }) {
 
     } catch (e) {
       console.error("Accesso microfono negato", e);
+    }
+  };
+
+  const sendResourceAudio = async (blob) => {
+    const audioUrl = URL.createObjectURL(blob);
+    const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const msgId = Date.now().toString();
+    
+    // Mostra subito il messaggio vocale (come l'OS)
+    setResourceChats(prev => ({
+      ...prev,
+      [selectedResource.id]: [
+        ...(prev[selectedResource.id] || []),
+        { id: msgId, role: 'user', text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, timestamp }
+      ]
+    }));
+    
+    setChatStatus("loading");
+
+    try {
+      const fd = new FormData();
+      fd.append("audio", blob, "rec.webm");
+      fd.append("resource_path", selectedResource.id);
+      
+      const res = await fetch(`${BACKEND_URL}/api/resources/voice`, { method: "POST", body: fd });
+      const data = await res.json();
+      
+      if (data.transcript) {
+        // Aggiorna il messaggio con la trascrizione
+        setResourceChats(prev => ({
+          ...prev,
+          [selectedResource.id]: prev[selectedResource.id].map(m => m.id === msgId ? { ...m, transcript: data.transcript } : m)
+        }));
+      }
+
+      if (data.response) {
+        const aiMsg = { role: 'jarvis', text: data.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        setResourceChats(prev => ({
+          ...prev,
+          [selectedResource.id]: [...(prev[selectedResource.id] || []), aiMsg]
+        }));
+      } else if (data.error) {
+        throw new Error(data.error);
+      }
+      setChatStatus("idle");
+    } catch(e) {
+      console.error(e);
+      setChatStatus("error");
     }
   };
 
@@ -1059,6 +1089,12 @@ export default function ResourceView({ isMobile }) {
                             </span>
                             {msg.timestamp && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>{msg.timestamp}</span>}
                           </div>
+                          {msg.isAudio && msg.audioUrl && (
+                            <div style={{ marginTop: '8px' }}>
+                              <audio src={msg.audioUrl} controls style={{ height: '30px', width: '200px', borderRadius: '15px' }} />
+                              {msg.transcript && <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '4px', fontStyle: 'italic' }}>"{msg.transcript}"</div>}
+                            </div>
+                          )}
                           <div className="prose markdown-body" style={{ color: '#fff', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: msg.text ? msg.text.replace(/\n/g, '<br/>') : '' }} />
                         </div>
                       </div>
