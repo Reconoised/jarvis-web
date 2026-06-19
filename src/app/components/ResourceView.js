@@ -302,16 +302,12 @@ export default function ResourceView({ isMobile }) {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     const msgId = Date.now().toString();
     
-    // Mostra subito il messaggio vocale (come l'OS)
-    setResourceChats(prev => ({
+    updateChatMessages(selectedResource.id, prev => [
       ...prev,
-      [selectedResource.id]: [
-        ...(prev[selectedResource.id] || []),
-        { id: msgId, role: 'user', text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, timestamp }
-      ]
-    }));
+      { id: msgId, role: 'user', text: "🎙️ Messaggio vocale", isAudio: true, audioUrl, timestamp }
+    ]);
     
-    setChatStatus("loading");
+    setIsChatting(true);
 
     try {
       const fd = new FormData();
@@ -322,26 +318,22 @@ export default function ResourceView({ isMobile }) {
       const data = await res.json();
       
       if (data.transcript) {
-        // Aggiorna il messaggio con la trascrizione
-        setResourceChats(prev => ({
-          ...prev,
-          [selectedResource.id]: prev[selectedResource.id].map(m => m.id === msgId ? { ...m, transcript: data.transcript } : m)
-        }));
+        updateChatMessages(selectedResource.id, prev => prev.map(m => m.id === msgId ? { ...m, transcript: data.transcript } : m));
       }
 
       if (data.response) {
-        const aiMsg = { role: 'jarvis', text: data.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
-        setResourceChats(prev => ({
-          ...prev,
-          [selectedResource.id]: [...(prev[selectedResource.id] || []), aiMsg]
-        }));
+        updateChatMessages(selectedResource.id, prev => [
+          ...prev, 
+          { role: 'friday', text: data.response, timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }
+        ]);
       } else if (data.error) {
         throw new Error(data.error);
       }
-      setChatStatus("idle");
     } catch(e) {
       console.error(e);
-      setChatStatus("error");
+      updateChatMessages(selectedResource.id, prev => [...prev, { role: "friday", text: "Errore di rete vocale." }]);
+    } finally {
+      setIsChatting(false);
     }
   };
 
@@ -1059,54 +1051,61 @@ export default function ResourceView({ isMobile }) {
                 </div>
 
                 <div className="chat-messages-scroll" style={{ minHeight: 0, flex: 1, overflowY: 'auto' }}>
-                  {chatMessages.length === 0 ? (
-                    <div className="empty-chat h-full flex flex-col items-center justify-center text-center px-4">
-                      <MessageSquare size={32} className="text-blue-500/30 mb-3" />
-                      <p className="text-white/40 text-sm">Fai una domanda a Friday riguardo a questa specifica risorsa.</p>
-                      <p className="text-blue-400/60 text-xs mt-2">Contesto: {chatContext === 'resource' ? 'Solo questo documento' : 'Documento + Ricerca Web'}</p>
-                    </div>
-                  ) : (
-                    chatMessages.map((msg, i) => (
-                      <div key={i} className="flex w-full mb-4" style={{ justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start' }}>
-                        <div className={`msg ${msg.role === 'user' ? 'user' : 'assistant'}`} style={{ 
-                          position: 'relative',
-                          background: msg.role === 'user' ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 150, 255, 0.05)',
-                          border: msg.role === 'user' ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 150, 255, 0.2)',
-                          padding: '16px 20px', 
-                          borderRadius: '20px',
-                          borderTopRightRadius: msg.role === 'user' ? '4px' : '20px',
-                          borderTopLeftRadius: msg.role !== 'user' ? '4px' : '20px',
-                          color: '#fff',
-                          fontSize: '0.95rem', lineHeight: 1.6,
-                          maxWidth: '85%',
-                          boxShadow: '0 -10px 40px rgba(0,0,0,0.5)', zIndex: 20,
-                          borderTop: '1px solid rgba(255,255,255,0.05)'
-                        }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <span className="msg-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0, fontSize: '0.7rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1px', color: msg.role === 'user' ? 'rgba(255,255,255,0.6)' : '#60a5fa' }}>
-                              {msg.role === "user" ? <User size={12} /> : <BrainCircuit size={12} />}
-                              {msg.role === "user" ? "Tu" : "Friday"}
-                            </span>
-                            {msg.timestamp && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>{msg.timestamp}</span>}
-                          </div>
-                          {msg.isAudio && msg.audioUrl && (
-                            <div style={{ marginTop: '8px' }}>
-                              <audio src={msg.audioUrl} controls style={{ height: '30px', width: '200px', borderRadius: '15px' }} />
-                              {msg.transcript && <div style={{ fontSize: '0.8rem', opacity: 0.8, marginTop: '4px', fontStyle: 'italic' }}>"{msg.transcript}"</div>}
-                            </div>
-                          )}
-                          <div className="prose markdown-body" style={{ color: '#fff', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: msg.text ? msg.text.replace(/\n/g, '<br/>') : '' }} />
+                  <AnimatePresence>
+                    {(!resourceChats[selectedResource.id] || resourceChats[selectedResource.id].length === 0) ? (
+                      <motion.div 
+                        initial={{opacity:0}} 
+                        animate={{opacity:1}}
+                        className="empty-state" 
+                        style={{ height: '100%', display: 'flex', flexDirection: 'column', color: 'rgba(255,255,255,0.4)', justifyContent: 'center', alignItems: 'center' }}
+                      >
+                        <MessageSquare size={32} style={{ marginBottom: '12px', opacity: 0.5 }} />
+                        <p>Nessun messaggio. Chiedimi qualcosa su questo documento!</p>
+                      </motion.div>
+                    ) : (
+                      resourceChats[selectedResource.id].map((msg, i) => (
+                      <motion.div 
+                        key={msg.id || i} 
+                        initial={{opacity:0, y: 20}} 
+                        animate={{opacity:1, y:0}}
+                        className={`msg ${msg.role === 'user' ? 'user' : 'assistant'}`}
+                        style={{ marginBottom: '16px' }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <span className="msg-label" style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: 0 }}>
+                            {msg.role === "user" ? <User size={12} /> : <BrainCircuit size={12} />}
+                            {msg.role === "user" ? "Tu" : "Friday"}
+                          </span>
+                          {msg.timestamp && <span style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.4)', fontWeight: 'bold' }}>{msg.timestamp}</span>}
                         </div>
-                      </div>
+                        
+                        {msg.isAudio ? (
+                          <div style={{ marginTop: '4px' }}>
+                            <audio src={msg.audioUrl} controls style={{ height: '30px', width: '200px', borderRadius: '15px' }} />
+                            {msg.transcript && (
+                              <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>
+                                "{msg.transcript}"
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="prose markdown-body" style={{ color: '#fff', fontSize: '0.95rem' }} dangerouslySetInnerHTML={{ __html: msg.text ? msg.text.replace(/\n/g, '<br/>') : '' }} />
+                        )}
+                      </motion.div>
                     ))
-                  )}
+                    )}
+                  </AnimatePresence>
+                  
                   {isChatting && (
-                    <div className="flex w-full mb-4" style={{ justifyContent: 'flex-start' }}>
-                      <div className="msg assistant" style={{ position: 'relative', padding: '16px 20px', borderRadius: '20px', borderTopLeftRadius: '4px', background: 'rgba(0, 150, 255, 0.05)', border: '1px solid rgba(0, 150, 255, 0.2)', color: '#5e9cff', display: 'flex', alignItems: 'center' }}>
-                        <Loader2 size={16} className="spinner animate-spin" />
-                        <span className="ml-2 text-xs font-medium opacity-70">Analizzando ({chatContext})...</span>
-                      </div>
-                    </div>
+                    <motion.div 
+                      initial={{opacity:0, y: 20}} 
+                      animate={{opacity:1, y:0}}
+                      className="msg assistant"
+                      style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}
+                    >
+                      <Loader2 size={16} className="spinner animate-spin" />
+                      <span className="ml-2 text-xs font-medium opacity-70">Analizzando ({chatContext})...</span>
+                    </motion.div>
                   )}
                   <div ref={messagesEndRef} />
                 </div>
