@@ -4,40 +4,32 @@ import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { MessageSquare, Calendar, Smile, Meh, Frown, CheckCircle2, Briefcase, Sparkles, ChevronDown, Send, ArrowRight } from "lucide-react";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
+
 export default function JournalView() {
-  const [selectedDate, setSelectedDate] = useState("2026-06-19");
+  const [selectedDate, setSelectedDate] = useState("");
   const [inputText, setInputText] = useState("");
-  
-  // Mock Data per la demo della UI
-  const mockDays = [
-    { date: "2026-06-19", label: "Oggi", mood: "great" },
-    { date: "2026-06-18", label: "Ieri", mood: "good" },
-    { date: "2026-06-17", label: "17 Giugno", mood: "bad" },
-    { date: "2026-06-16", label: "16 Giugno", mood: "good" },
-  ];
+  const [days, setDays] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const mockJournalData = {
-    "2026-06-19": {
-      summary: "Giornata molto produttiva. Hai lavorato al progetto Friday OS implementando la nuova UI del diario e hai gestito bene le tue priorità. Nel pomeriggio hai avuto una riunione per il flipping immobiliare a Milano.",
-      reflections: [
-        { q: "Cosa è andato bene oggi?", a: "Ho finito la UI del diario e il cliente era molto soddisfatto." },
-        { q: "Cosa potevi fare meglio?", a: "Potevo staccare gli occhi dallo schermo un po' prima." }
-      ],
-      tasks: ["Inviare preventivo idraulico", "Chiamare agenzia per visita immobile"],
-      projects: ["Friday OS", "Flipping Milano Certosa"],
-      tip: "Domani cerca di fare una passeggiata di 20 minuti dopo pranzo per ricaricare le energie e staccare gli occhi dallo schermo. Stai andando alla grande!",
-      chat: [
-        { role: "assistant", text: "Ciao Denis, come è andata la tua giornata?" },
-        { role: "user", text: "Molto bene, ho lavorato al progetto Friday OS e ho fatto una riunione per il flipping a Milano. Però sono un po' stanco." },
-        { role: "assistant", text: "Ottimo lavoro su Friday OS! Ho segnato il progetto Flipping Milano. Ti sei ricordato di chiamare l'agenzia per la visita come avevamo detto stamattina?" },
-        { role: "user", text: "Ah cavolo no, me lo segno per domani. Ah e ricordami di inviare il preventivo all'idraulico." },
-        { role: "assistant", text: "Fatto. Ho aggiunto 'Chiamare agenzia' e 'Inviare preventivo idraulico' alle task di domani. Altro da aggiungere o chiudiamo la giornata?" },
-      ]
-    }
-  };
+  useEffect(() => {
+    fetch(`${BACKEND_URL}/api/journal/list`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.days && data.days.length > 0) {
+          setDays(data.days);
+          setSelectedDate(data.days[0].date);
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Errore fetch journal:", err);
+        setLoading(false);
+      });
+  }, []);
 
-  const data = mockJournalData[selectedDate] || {
-    summary: "Nessun riassunto ancora disponibile per questa giornata. Raccontami com'è andata!",
+  const data = days.find(d => d.date === selectedDate) || {
+    summary: loading ? "Caricamento in corso..." : "Nessun riassunto ancora disponibile per questa giornata. Raccontami com'è andata!",
     reflections: [],
     tasks: [],
     projects: [],
@@ -62,11 +54,11 @@ export default function JournalView() {
 
   return (
     <div className="journal-container">
-      {/* Sidebar dei Giorni */}
-      <div className="journal-sidebar">
-        <h2 className="journal-sidebar-title"><Calendar size={18} /> Cronologia</h2>
+      {/* Top Nav dei Giorni */}
+      <div className="journal-top-nav">
+        <h2 className="journal-top-nav-title"><Calendar size={18} /> Cronologia</h2>
         <div className="journal-days-list">
-          {mockDays.map((day) => (
+          {days.map((day) => (
             <div 
               key={day.date} 
               className={`journal-day-item ${selectedDate === day.date ? "active" : ""}`}
@@ -87,7 +79,7 @@ export default function JournalView() {
       {/* Main Day View */}
       <div className="journal-main">
         <div className="journal-header">
-          <h1>Diario — {mockDays.find(d => d.date === selectedDate)?.label || selectedDate}</h1>
+          <h1>Diario — {days.find(d => d.date === selectedDate)?.label || selectedDate}</h1>
           <div className="mood-selector">
             <button className="mood-btn active"><Smile size={20} /></button>
             <button className="mood-btn"><Meh size={20} /></button>

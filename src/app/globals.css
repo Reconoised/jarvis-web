@@ -759,17 +759,18 @@ html, body {
 .wake-debug { font-size: 0.7rem; color: #4ade80; position: absolute; bottom: 24px; opacity: 0.6; text-align: center; }
 
 /* === DIARIO UI CLASSES === */
-.journal-container { display: flex; height: 100%; width: 100%; gap: 20px; padding: 0 16px 20px; }
-.journal-sidebar { width: 280px; display: flex; flex-direction: column; gap: 12px; border-right: 1px solid var(--border); padding-right: 20px; overflow-y: auto; flex-shrink: 0; }
-.journal-sidebar-title { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--fg-muted); margin-bottom: 10px; }
-.journal-days-list { display: flex; flex-direction: column; gap: 8px; }
-.journal-day-item { display: flex; justify-content: space-between; align-items: center; padding: 12px; background: rgba(255,255,255,0.03); border: 1px solid transparent; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+.journal-container { display: flex; flex-direction: column; height: 100%; width: 100%; gap: 20px; padding: 0 16px 20px; overflow: hidden; }
+.journal-top-nav { display: flex; align-items: center; gap: 12px; padding-bottom: 15px; border-bottom: 1px solid var(--border); overflow-x: auto; flex-shrink: 0; }
+.journal-top-nav::-webkit-scrollbar { height: 4px; }
+.journal-top-nav-title { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--fg-muted); margin-right: 10px; flex-shrink: 0; }
+.journal-days-list { display: flex; gap: 8px; }
+.journal-day-item { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: rgba(255,255,255,0.03); border: 1px solid transparent; border-radius: 20px; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
 .journal-day-item:hover { background: rgba(255,255,255,0.06); }
 .journal-day-item.active { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
-.day-info { display: flex; flex-direction: column; gap: 4px; }
-.day-label { font-size: 0.95rem; font-weight: 600; color: var(--fg); }
-.day-date { font-size: 0.75rem; color: var(--fg-muted); }
-.day-mood { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: rgba(0,0,0,0.3); border-radius: 50%; }
+.day-info { display: flex; flex-direction: column; gap: 2px; }
+.day-label { font-size: 0.9rem; font-weight: 600; color: var(--fg); }
+.day-date { font-size: 0.7rem; color: var(--fg-muted); }
+.day-mood { display: flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: rgba(0,0,0,0.3); border-radius: 50%; }
 
 .journal-main { flex-grow: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0; overflow-y: auto; padding-right: 10px; }
 .journal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
