@@ -955,11 +955,12 @@ html, body {
 .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
 /* Orb Styles */
-.orb-container { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;}
-@media (min-width: 768px) { .orb-container { width: 180px; height: 180px; } }
+.orb-container { position: relative; width: 180px; height: 100px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;}
+@media (min-width: 768px) { .orb-container { width: 240px; height: 120px; } }
 .orb {
-  width: 100%; height: 100%; border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(0,180,255,0.85) 30%, rgba(0,30,80,0.95) 100%);
+  width: 100%; height: 100%; 
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(0,180,255,0.85) 30%, rgba(0,30,80,0.95) 100%);
   box-shadow: 0 0 60px rgba(0,180,255,0.4), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5);
   cursor: pointer;
   transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -968,28 +969,39 @@ html, body {
 }
 .orb::after {
   content: ''; position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle at 60% 60%, rgba(0,180,255,0.4), transparent 60%);
+  background: radial-gradient(ellipse at 60% 60%, rgba(0,180,255,0.4), transparent 60%);
   mix-blend-mode: overlay;
   animation: pulseGlow 4s infinite alternate ease-in-out;
 }
 .orb.idle { animation: idleOrb 4s infinite alternate ease-in-out; }
 .orb.recording { 
-  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,50,80,0.85) 30%, rgba(60,0,10,0.95) 100%); 
+  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,50,80,0.85) 30%, rgba(60,0,10,0.95) 100%); 
   box-shadow: 0 0 80px rgba(255,50,80,0.6), inset 0 0 40px rgba(255,255,255,0.6), inset -20px -20px 40px rgba(0,0,0,0.6);
+  animation: recOrb 2s infinite alternate ease-in-out;
 }
 .orb.thinking { 
-  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,200,60,0.85) 30%, rgba(60,40,0,0.95) 100%); 
+  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(255,200,60,0.85) 30%, rgba(60,40,0,0.95) 100%); 
   box-shadow: 0 0 60px rgba(255,200,60,0.5), inset 0 0 40px rgba(255,255,255,0.5), inset -20px -20px 40px rgba(0,0,0,0.5); 
   animation: thinkOrb 1s infinite alternate ease-in-out; 
 }
 .orb.speaking { 
-  background: radial-gradient(circle at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(100,200,255,0.85) 30%, rgba(0,20,60,0.95) 100%); 
-  animation: speakOrb 0.5s infinite alternate ease-in-out; 
+  background: radial-gradient(ellipse at 35% 35%, rgba(255,255,255,0.95) 0%, rgba(100,200,255,0.85) 30%, rgba(0,20,60,0.95) 100%); 
+  animation: speakOrb 0.6s infinite alternate ease-in-out; 
 }
 
-@keyframes idleOrb { 0% { transform: scale(0.95) translateY(4px); box-shadow: 0 0 30px rgba(0,180,255,0.3), inset 0 0 30px rgba(255,255,255,0.3), inset -20px -20px 40px rgba(0,0,0,0.5); } 100% { transform: scale(1.05) translateY(-4px); box-shadow: 0 0 90px rgba(0,180,255,0.7), inset 0 0 50px rgba(255,255,255,0.7), inset -20px -20px 40px rgba(0,0,0,0.5); } }
-@keyframes thinkOrb { 0% { transform: scale(0.98); filter: brightness(1); } 100% { transform: scale(1.08); filter: brightness(1.4); } }
-@keyframes speakOrb { 0% { transform: scale(0.98); box-shadow: 0 0 50px rgba(100,180,255,0.5), inset 0 0 30px rgba(255,255,255,0.5); } 100% { transform: scale(1.15); box-shadow: 0 0 120px rgba(100,200,255,1), inset 0 0 80px rgba(255,255,255,0.9); } }
+@keyframes idleOrb { 
+  0% { transform: scale(0.95) translateY(4px); border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%; box-shadow: 0 0 30px rgba(0,180,255,0.3), inset 0 0 30px rgba(255,255,255,0.3), inset -20px -20px 40px rgba(0,0,0,0.5); } 
+  50% { border-radius: 50% 50% 50% 50% / 40% 40% 60% 60%; }
+  100% { transform: scale(1.05) translateY(-4px); border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; box-shadow: 0 0 90px rgba(0,180,255,0.7), inset 0 0 50px rgba(255,255,255,0.7), inset -20px -20px 40px rgba(0,0,0,0.5); } 
+}
+@keyframes recOrb { 0% { border-radius: 50%; } 100% { border-radius: 40% 60% 40% 60% / 60% 40% 60% 40%; } }
+@keyframes thinkOrb { 0% { transform: scale(0.98); filter: brightness(1); border-radius: 50%; } 100% { transform: scale(1.08); filter: brightness(1.4); border-radius: 45% 55% 45% 55% / 55% 45% 55% 45%; } }
+@keyframes speakOrb { 
+  0% { transform: scale(0.98); box-shadow: 0 0 50px rgba(100,180,255,0.5), inset 0 0 30px rgba(255,255,255,0.5); border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%; } 
+  33% { border-radius: 60% 40% 40% 60% / 40% 60% 50% 40%; }
+  66% { transform: scale(1.15); box-shadow: 0 0 120px rgba(100,200,255,1), inset 0 0 80px rgba(255,255,255,0.9); border-radius: 40% 60% 50% 40% / 40% 50% 60% 50%; } 
+  100% { transform: scale(1.05); border-radius: 50% 50% 50% 50% / 50% 50% 50% 50%; }
+}
 @keyframes pulseGlow { 0% { opacity: 0.2; transform: scale(0.8) rotate(0deg); } 100% { opacity: 1; transform: scale(1.2) rotate(20deg); } }
 
 .orb-rings { position: absolute; inset: -40px; border-radius: 50%; border: 1px solid rgba(0,180,255,0.1); pointer-events: none;}
