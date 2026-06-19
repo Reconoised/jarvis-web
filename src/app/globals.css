@@ -452,7 +452,6 @@ html, body {
   .nav-item span {
     font-size: 0.65rem;
   }
-  }
   .dashboard {
     padding-bottom: 0; /* Remove bottom padding because sidebar is there */
   }
