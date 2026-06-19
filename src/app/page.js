@@ -631,19 +631,17 @@ export default function Dashboard() {
               {/* Friday Core Header */}
               <div className="core-header">
                 <div className="core-controls">
-                  <div className="status-text">
+                  <div className="status-pill">
                     {mode === "recording" && <span className="rec-dot" />}
                     {wakeEnabled && mode === "idle" && <span className="wake-dot" />}
                     {STATUS[mode]}
                   </div>
                   <div style={{ display: 'flex', gap: '12px' }}>
                     <button className={`wake-btn ${wakeEnabled ? "active" : ""}`} onClick={toggleWake}>
-                      {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />}
-                      {wakeEnabled ? "Wake: ON" : "Wake: OFF"}
+                      {wakeEnabled ? <Mic size={14} /> : <MicOff size={14} />} <span>WAKE</span>
                     </button>
                     <button className={`wake-btn ${ttsEnabled ? "active" : ""}`} onClick={() => setTtsEnabled(!ttsEnabled)}>
-                      {ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-                      {ttsEnabled ? "Voice: ON" : "Voice: OFF"}
+                      {ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />} <span>VOICE</span>
                     </button>
                   </div>
                 </div>
