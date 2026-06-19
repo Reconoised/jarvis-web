@@ -116,7 +116,7 @@ export default function Dashboard() {
     
     const scroll = () => {
       if (!scrollElem) return;
-      scrollPos += 0.3; // Velocità dello scroll
+      scrollPos += 0.5; // Velocità dello scroll aumentata leggermente
       if (scrollPos >= scrollElem.scrollHeight - scrollElem.clientHeight) {
         scrollPos = 0; // Torna all'inizio in loop
       }
