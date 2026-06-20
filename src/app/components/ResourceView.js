@@ -1056,6 +1056,7 @@ export default function ResourceView({ isMobile }) {
                             ref={fgRef}
                             nodeLabel=""
                             nodeCanvasObject={(node, ctx, globalScale) => {
+                              if (node.x === undefined || node.y === undefined) return;
                               const label = node.name;
                               const fontSize = Math.max(11/globalScale, 2.5);
                               ctx.font = `600 ${fontSize}px -apple-system, sans-serif`;
@@ -1065,7 +1066,7 @@ export default function ResourceView({ isMobile }) {
                               // Glow effect
                               const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius * 3);
                               gradient.addColorStop(0, `${node.color}30`);
-                              gradient.addColorStop(1, 'transparent');
+                              gradient.addColorStop(1, 'rgba(0,0,0,0)');
                               ctx.beginPath();
                               ctx.arc(node.x, node.y, radius * 3, 0, 2 * Math.PI);
                               ctx.fillStyle = gradient;
