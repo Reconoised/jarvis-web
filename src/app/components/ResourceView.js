@@ -806,12 +806,12 @@ export default function ResourceView({ isMobile }) {
                 </div>
 
                 {/* TABS NAVIGATION */}
-                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.4)', borderRadius: '16px', padding: '6px', position: 'relative', border: '1px solid rgba(255,255,255,0.05)', boxShadow: 'inset 0 2px 10px rgba(0,0,0,0.5)', gap: 0, marginBottom: '24px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: '14px', padding: '4px', position: 'relative', border: '1px solid rgba(255,255,255,0.06)', gap: '2px', marginBottom: '20px' }}>
                   {[
-                    { id: 'reader', label: 'Reader', icon: FileText, color: '#3b82f6' },
-                    { id: 'connections', label: 'Connessioni', icon: Network, color: '#a855f7' },
-                    { id: 'graph', label: 'Mini Grafo', icon: BrainCircuit, color: '#10b981' },
-                    ...(selectedResource.type === 'video' ? [{ id: 'raw', label: 'Raw Transcript', icon: FileText, color: '#f43f5e' }] : [])
+                    { id: 'reader', label: 'Reader', icon: FileText, color: '#3b82f6', rgb: '59,130,246' },
+                    { id: 'connections', label: 'Connessioni', icon: Network, color: '#a855f7', rgb: '168,85,247' },
+                    { id: 'graph', label: 'Grafo', icon: Share2, color: '#10b981', rgb: '16,185,129' },
+                    ...(selectedResource.type === 'video' ? [{ id: 'raw', label: 'Transcript', icon: FileText, color: '#f43f5e', rgb: '244,63,94' }] : [])
                   ].map(tab => {
                     const Icon = tab.icon;
                     const isActive = activeTab === tab.id;
@@ -820,18 +820,18 @@ export default function ResourceView({ isMobile }) {
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
                         style={{
-                          position: 'relative', padding: '10px 20px', cursor: 'pointer', zIndex: 1, display: 'flex', alignItems: 'center', gap: '8px', flex: 1, justifyContent: 'center'
+                          position: 'relative', padding: '8px 0', cursor: 'pointer', zIndex: 1, display: 'flex', alignItems: 'center', gap: '6px', flex: 1, justifyContent: 'center', borderRadius: '11px', transition: 'all 0.2s'
                         }}
                       >
                         {isActive && (
                           <motion.div
                             layoutId="active-modal-tab"
-                            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: `rgba(${tab.color === '#3b82f6' ? '59,130,246' : tab.color === '#a855f7' ? '168,85,247' : tab.color === '#10b981' ? '16,185,129' : '244,63,94'}, 0.15)`, borderRadius: '12px', border: `1px solid ${tab.color}`, boxShadow: `0 0 15px rgba(${tab.color === '#3b82f6' ? '59,130,246' : tab.color === '#a855f7' ? '168,85,247' : tab.color === '#10b981' ? '16,185,129' : '244,63,94'}, 0.2)` }}
-                            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                            style={{ position: 'absolute', inset: 0, background: `rgba(${tab.rgb}, 0.12)`, borderRadius: '11px', border: `1px solid rgba(${tab.rgb}, 0.4)`, boxShadow: `0 0 20px rgba(${tab.rgb}, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)` }}
+                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
                           />
                         )}
-                        <span style={{ fontSize: '0.9rem', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.5)', zIndex: 2, transition: 'color 0.3s', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <Icon size={16} style={{ color: isActive ? tab.color : 'inherit' }} />
+                        <span style={{ fontSize: '0.78rem', fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.4)', zIndex: 2, transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '6px', letterSpacing: '0.02em' }}>
+                          <Icon size={14} style={{ color: isActive ? tab.color : 'inherit' }} />
                           {tab.label}
                         </span>
                       </div>
@@ -978,62 +978,73 @@ export default function ResourceView({ isMobile }) {
                       </motion.div>
                     )}
 
-                    {activeTab === 'connections' && (
-                      <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} className="mockup-view" style={{justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent'}}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px'}}>
-                          <Network size={32} className="text-purple-500" />
-                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Connessioni Neurali</h4>
-                        </div>
-                        <p style={{color: 'rgba(255,255,255,0.6)', marginBottom: '24px', maxWidth: '100%', marginLeft: 0}}>Risorse collegate a "{selectedResource.title}"</p>
-                        
-                        <div style={{display: 'flex', flexDirection: 'column', gap: '16px'}}>
-                          {resources.filter(r => r.id !== selectedResource.id && (
-                            (Array.isArray(r.tags) && Array.isArray(selectedResource.tags) && r.tags.some(t => selectedResource.tags.includes(t))) || 
-                            (Array.isArray(r.topics) && Array.isArray(selectedResource.topics) && r.topics.some(t => selectedResource.topics.includes(t)))
-                          )).slice(0, 5).map(r => (
-                            <div key={r.id} style={{padding: '16px', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer'}} onClick={() => setSelectedResource(r)}>
-                              <h5 style={{color: '#60a5fa', margin: '0 0 8px 0', fontSize: '0.95rem'}}>{r.title}</h5>
-                              <p style={{color: 'rgba(255,255,255,0.5)', margin: 0, fontSize: '0.85rem'}}>{r.summary}</p>
-                            </div>
-                          ))}
-                          {resources.filter(r => r.id !== selectedResource.id && (
-                            (Array.isArray(r.tags) && Array.isArray(selectedResource.tags) && r.tags.some(t => selectedResource.tags.includes(t))) || 
-                            (Array.isArray(r.topics) && Array.isArray(selectedResource.topics) && r.topics.some(t => selectedResource.topics.includes(t)))
-                          )).length === 0 && (
-                            <p style={{color: 'rgba(255,255,255,0.3)', fontStyle: 'italic', margin: 0}}>Nessuna connessione trovata.</p>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
+                    {activeTab === 'connections' && (() => {
+                      const selTags = [...(Array.isArray(selectedResource.tags) ? selectedResource.tags : []), ...(Array.isArray(selectedResource.topics) ? selectedResource.topics : [])].map(t => t.toLowerCase());
+                      const connected = resources.filter(r => {
+                        if (r.id === selectedResource.id) return false;
+                        const rTags = [...(Array.isArray(r.tags) ? r.tags : []), ...(Array.isArray(r.topics) ? r.topics : [])].map(t => t.toLowerCase());
+                        return rTags.some(t => selTags.includes(t));
+                      }).slice(0, 8);
+                      return (
+                        <motion.div key="connections" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{overflowY: 'auto', height: '100%', padding: '24px'}}>
+                          <div style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                            {connected.length > 0 ? connected.map(r => {
+                              const rTags = [...(Array.isArray(r.tags) ? r.tags : []), ...(Array.isArray(r.topics) ? r.topics : [])].map(t => t.toLowerCase());
+                              const sharedTags = selTags.filter(t => rTags.includes(t));
+                              return (
+                                <motion.div 
+                                  key={r.id} 
+                                  whileHover={{ scale: 1.01, borderColor: 'rgba(168,85,247,0.4)' }}
+                                  style={{padding: '16px 20px', background: 'rgba(255,255,255,0.03)', borderRadius: '16px', border: '1px solid rgba(255,255,255,0.08)', cursor: 'pointer', transition: 'all 0.2s'}} 
+                                  onClick={() => { setSelectedResource(r); setActiveTab('reader'); }}
+                                >
+                                  <div style={{display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px'}}>
+                                    <div style={{width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', boxShadow: '0 0 8px rgba(168,85,247,0.6)', flexShrink: 0}} />
+                                    <h5 style={{color: '#e2e8f0', margin: 0, fontSize: '0.9rem', fontWeight: 600}}>{r.title}</h5>
+                                  </div>
+                                  {r.summary && <p style={{color: 'rgba(255,255,255,0.4)', margin: '0 0 10px 18px', fontSize: '0.8rem', lineHeight: 1.5}}>{r.summary.substring(0, 120)}{r.summary.length > 120 ? '...' : ''}</p>}
+                                  <div style={{display: 'flex', gap: '6px', flexWrap: 'wrap', marginLeft: '18px'}}>
+                                    {sharedTags.slice(0, 3).map(tag => (
+                                      <span key={tag} style={{fontSize: '0.65rem', padding: '3px 8px', borderRadius: '6px', background: 'rgba(168,85,247,0.15)', color: '#c084fc', border: '1px solid rgba(168,85,247,0.25)', fontWeight: 600}}>#{tag}</span>
+                                    ))}
+                                  </div>
+                                </motion.div>
+                              );
+                            }) : (
+                              <div style={{display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '200px', color: 'rgba(255,255,255,0.3)'}}>
+                                <Network size={32} style={{marginBottom: '12px', opacity: 0.4}} />
+                                <p style={{margin: 0, fontStyle: 'italic', fontSize: '0.85rem'}}>Nessuna connessione trovata.</p>
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      );
+                    })()}
 
                     {activeTab === 'graph' && (
-                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', height: '100%', border: 'none', background: 'transparent', padding: 0, width: '100%'}}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', padding: '24px 24px 0 24px', flexShrink: 0}}>
-                          <Share2 size={32} className="text-green-500" />
-                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Topologia Neurale</h4>
-                        </div>
-                        <p style={{color: 'rgba(255,255,255,0.6)', padding: '0 24px', marginBottom: '12px', maxWidth: '100%', flexShrink: 0}}>Esplora visivamente i concetti e le risorse collegate interagendo con il grafo.</p>
-                        <div ref={graphContainerRef} style={{flex: 1, height: '100%', width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.05)', display: 'flex'}}>
+                      <motion.div key="graph" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', height: '100%', border: 'none', background: 'transparent', padding: 0, width: '100%'}}>
+                        <div ref={graphContainerRef} style={{flex: 1, height: '100%', width: '100%', borderRadius: '16px', overflow: 'hidden', background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(255,255,255,0.04)', display: 'flex'}}>
                           <ForceGraph2D
                             width={graphDimensions.width || 600}
                             height={graphDimensions.height || 400}
                             graphData={(() => {
                               if (!selectedResource) return { nodes: [], links: [] };
-                              const nodes = [{ id: selectedResource.id, name: selectedResource.title, val: 20, color: '#3b82f6' }];
+                              const nodes = [{ id: selectedResource.id, name: selectedResource.title, val: 24, color: '#3b82f6', isCenter: true }];
                               const links = [];
-                              const tags = Array.isArray(selectedResource.topics) ? selectedResource.topics : Array.isArray(selectedResource.tags) ? selectedResource.tags : [];
+                              const allTags = [...(Array.isArray(selectedResource.topics) ? selectedResource.topics : []), ...(Array.isArray(selectedResource.tags) ? selectedResource.tags : [])];
+                              const uniqueTags = [...new Set(allTags.map(t => t.toLowerCase()))];
                               
-                              tags.forEach(tag => {
+                              uniqueTags.forEach(tag => {
                                 const tagId = `tag_${tag}`;
-                                nodes.push({ id: tagId, name: `#${tag}`, val: 10, color: '#10b981' });
+                                nodes.push({ id: tagId, name: `#${tag}`, val: 8, color: '#10b981', isTag: true });
                                 links.push({ source: selectedResource.id, target: tagId });
 
                                 resources.forEach(r => {
                                   if (r.id !== selectedResource.id) {
-                                    const rTags = Array.isArray(r.topics) ? r.topics : Array.isArray(r.tags) ? r.tags : [];
+                                    const rTags = [...(Array.isArray(r.topics) ? r.topics : []), ...(Array.isArray(r.tags) ? r.tags : [])].map(t => t.toLowerCase());
                                     if (rTags.includes(tag)) {
                                       if (!nodes.find(n => n.id === r.id)) {
-                                        nodes.push({ id: r.id, name: r.title.substring(0, 20) + '...', val: 5, color: '#8b5cf6' });
+                                        nodes.push({ id: r.id, name: r.title.length > 25 ? r.title.substring(0, 25) + '…' : r.title, val: 5, color: '#8b5cf6' });
                                       }
                                       links.push({ source: tagId, target: r.id });
                                     }
@@ -1046,36 +1057,52 @@ export default function ResourceView({ isMobile }) {
                             nodeLabel=""
                             nodeCanvasObject={(node, ctx, globalScale) => {
                               const label = node.name;
-                              const fontSize = Math.max(12/globalScale, 2);
-                              ctx.font = `${fontSize}px Sans-Serif`;
+                              const fontSize = Math.max(11/globalScale, 2.5);
+                              ctx.font = `600 ${fontSize}px -apple-system, sans-serif`;
                               
-                              const radius = node.val ? Math.sqrt(node.val) * 1.5 : 4;
+                              const radius = node.val ? Math.sqrt(node.val) * 1.8 : 4;
                               
+                              // Glow effect
+                              const gradient = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, radius * 3);
+                              gradient.addColorStop(0, `${node.color}30`);
+                              gradient.addColorStop(1, 'transparent');
                               ctx.beginPath();
-                              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI, false);
-                              ctx.fillStyle = node.color || '#ffffff';
+                              ctx.arc(node.x, node.y, radius * 3, 0, 2 * Math.PI);
+                              ctx.fillStyle = gradient;
                               ctx.fill();
                               
+                              // Main circle
                               ctx.beginPath();
-                              ctx.arc(node.x, node.y, radius + 2, 0, 2 * Math.PI, false);
-                              ctx.strokeStyle = `${node.color || '#ffffff'}40`;
+                              ctx.arc(node.x, node.y, radius, 0, 2 * Math.PI);
+                              ctx.fillStyle = node.color;
+                              ctx.fill();
+                              
+                              // Outline ring
+                              ctx.beginPath();
+                              ctx.arc(node.x, node.y, radius + 1.5, 0, 2 * Math.PI);
+                              ctx.strokeStyle = `${node.color}50`;
                               ctx.lineWidth = 1;
                               ctx.stroke();
 
-                              if (globalScale > 1 || node.val === 20) {
+                              // Labels always visible for center & tags, zoom for others
+                              if (node.isCenter || node.isTag || globalScale > 0.8) {
                                 ctx.textAlign = 'center';
-                                ctx.textBaseline = 'middle';
-                                ctx.fillStyle = node.val === 20 ? 'rgba(255, 255, 255, 1)' : 'rgba(255, 255, 255, 0.6)';
-                                ctx.fillText(label, node.x, node.y + radius + fontSize);
+                                ctx.textBaseline = 'top';
+                                ctx.fillStyle = node.isCenter ? '#fff' : node.isTag ? 'rgba(16,185,129,0.9)' : 'rgba(255,255,255,0.6)';
+                                ctx.fillText(label, node.x, node.y + radius + 4);
                               }
                             }}
-                            linkColor={() => 'rgba(255,255,255,0.1)'}
-                            linkWidth={0.5}
+                            linkColor={() => 'rgba(255,255,255,0.06)'}
+                            linkWidth={0.8}
+                            linkDirectionalParticles={1}
+                            linkDirectionalParticleWidth={1.5}
+                            linkDirectionalParticleColor={() => 'rgba(59,130,246,0.4)'}
                             backgroundColor="transparent"
+                            cooldownTicks={80}
                             onNodeClick={node => {
                               if (node.id.startsWith('tag_')) return;
                               const res = resources.find(r => r.id === node.id);
-                              if (res) setSelectedResource(res);
+                              if (res) { setSelectedResource(res); setActiveTab('reader'); }
                             }}
                           />
                         </div>
@@ -1083,19 +1110,21 @@ export default function ResourceView({ isMobile }) {
                     )}
 
                     {activeTab === 'raw' && (
-                      <motion.div key="raw" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', textAlign: 'left', overflowY: 'auto', height: '100%', border: 'none', background: 'transparent', padding: 0}}>
-                        <div style={{display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', padding: '24px 24px 0 24px'}}>
-                          <FileText size={32} className="text-rose-500" />
-                          <h4 style={{margin: 0, color: '#fff', fontSize: '1.2rem'}}>Trascrizione Integrale</h4>
-                        </div>
-                        <div className="prose markdown-body" style={{fontSize: '0.9rem', lineHeight: 1.8, padding: '0 24px 24px 24px'}}
+                      <motion.div key="raw" initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} exit={{opacity:0, y:-10}} style={{display: 'flex', flexDirection: 'column', overflowY: 'auto', height: '100%', padding: '24px'}}>
+                        <div className="prose markdown-body" style={{fontSize: '0.88rem', lineHeight: 1.9, color: 'rgba(255,255,255,0.85)'}}
                           dangerouslySetInnerHTML={{ 
-                            __html: selectedResource.content && selectedResource.content.includes('=== RAW_TRANSCRIPT ===')
-                              ? selectedResource.content.split('=== RAW_TRANSCRIPT ===')[1].replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {
+                            __html: (() => {
+                              const c = selectedResource.content || '';
+                              const parts = c.split('=== RAW_TRANSCRIPT ===');
+                              const rawText = parts.length > 1 ? parts[1].trim() : '';
+                              if (!rawText) return "<div style='display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:200px;color:rgba(255,255,255,0.3)'><p style='font-style:italic;margin:0'>Nessuna trascrizione integrale disponibile per questo video.</p></div>";
+                              return rawText
+                                .replace(/\[(\d+):(\d{2})\]/g, (match, m, s) => {
                                   const totalSeconds = parseInt(m) * 60 + parseInt(s);
                                   return `<button class="timestamp-btn" data-time="${totalSeconds}">${match}</button>`;
-                                }).replace(/\n/g, '<br/>')
-                              : "<p style='color: rgba(255,255,255,0.5); font-style: italic;'>Nessuna trascrizione integrale salvata per questo video. Ricrealo o aggiornalo.</p>"
+                                })
+                                .replace(/\n/g, '<br/>');
+                            })()
                           }} 
                           onClick={(e) => {
                             if (e.target.classList.contains('timestamp-btn')) {
