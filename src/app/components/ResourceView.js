@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic, User } from "lucide-react";
+import { Link2, FileText, Loader2, CheckCircle2, Video, Globe, BookOpen, Search, Tag, X, Send, Trash2, Network, BrainCircuit, MessageSquare, PlayCircle, Share2, Maximize, Minimize, Paperclip, Download, Image as ImageIcon, Mic, User, Play, Pause } from "lucide-react";
 import dynamic from 'next/dynamic';
 
 const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false });
@@ -10,6 +10,76 @@ const ForceGraph2D = dynamic(() => import('react-force-graph-2d'), { ssr: false 
 const EMPTY_ARRAY = [];
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "https://antigravitycloudserver-production.up.railway.app";
+const IS_DEV = false; // toggle for testing empty state
+
+const CustomAudioPlayer = ({ url }) => {
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    const updateProgress = () => {
+      setProgress((audio.currentTime / audio.duration) * 100);
+      setCurrentTime(audio.currentTime);
+    };
+    const handleLoadedMetadata = () => {
+      setDuration(audio.duration);
+    };
+    const handleEnd = () => { setPlaying(false); setProgress(0); setCurrentTime(0); };
+    audio.addEventListener('timeupdate', updateProgress);
+    audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('ended', handleEnd);
+    return () => {
+      audio.removeEventListener('timeupdate', updateProgress);
+      audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('ended', handleEnd);
+    };
+  }, []);
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (playing) audioRef.current.pause();
+    else audioRef.current.play();
+    setPlaying(!playing);
+  };
+
+  const formatTime = (time) => {
+    if (isNaN(time)) return "0:00";
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'rgba(255,255,255,0.08)', padding: '10px 16px', borderRadius: '24px', border: '1px solid rgba(255,255,255,0.15)', width: '100%', minWidth: '280px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)' }}>
+      <audio ref={audioRef} src={url} preload="metadata" />
+      <button onClick={togglePlay} style={{ background: 'var(--accent)', border: 'none', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#000', flexShrink: 0, boxShadow: '0 0 10px rgba(0,180,255,0.4)' }}>
+        {playing ? <Pause size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+      </button>
+      
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.7rem', color: 'rgba(255,255,255,0.6)', fontWeight: 'bold' }}>
+          <span>{formatTime(currentTime)}</span>
+          <span>{formatTime(duration)}</span>
+        </div>
+        <div style={{ width: '100%', height: '6px', background: 'rgba(0,0,0,0.3)', borderRadius: '3px', overflow: 'hidden', cursor: 'pointer', position: 'relative' }} onClick={(e) => {
+           const rect = e.currentTarget.getBoundingClientRect();
+           const perc = (e.clientX - rect.left) / rect.width;
+           if (audioRef.current && audioRef.current.duration) {
+              audioRef.current.currentTime = perc * audioRef.current.duration;
+              setProgress(perc * 100);
+           }
+        }}>
+          <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, #00b4ff, #00ffea)', borderRadius: '3px', transition: 'width 0.1s linear', boxShadow: '0 0 10px rgba(0,255,234,0.5)' }} />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function ResourceView({ isMobile }) {
   const [url, setUrl] = useState("");
@@ -1081,7 +1151,7 @@ export default function ResourceView({ isMobile }) {
                         
                         {msg.isAudio ? (
                           <div style={{ marginTop: '4px' }}>
-                            <audio src={msg.audioUrl} controls style={{ height: '30px', width: '200px', borderRadius: '15px' }} />
+                            <CustomAudioPlayer url={msg.audioUrl} />
                             {msg.transcript && (
                               <div style={{ marginTop: '8px', fontSize: '0.85rem', color: 'rgba(255,255,255,0.9)', fontStyle: 'italic', borderLeft: '2px solid var(--accent)', paddingLeft: '8px' }}>
                                 "{msg.transcript}"
